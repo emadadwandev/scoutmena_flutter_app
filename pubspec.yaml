@@ -1,0 +1,104 @@
+name: scoutmena_app
+description: Football talent scouting platform connecting players and scouts across MENA
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI Icons
+  cupertino_icons: ^1.0.8
+
+  # State Management
+  flutter_bloc: ^9.1.1
+  equatable: ^2.0.5
+
+  # Dependency Injection
+  get_it: ^9.0.5
+  injectable: ^2.3.0
+
+  # Network
+  dio: ^5.3.3
+  retrofit: ^4.0.3
+  pretty_dio_logger: ^1.3.1
+  connectivity_plus: ^7.0.0
+
+  # Firebase
+  firebase_core: ^4.2.1
+  firebase_auth: ^6.1.2
+  firebase_messaging: ^16.0.4
+  firebase_analytics: ^12.0.4
+
+  # Local Storage
+  shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.0.0
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+
+  # UI Components
+  cached_network_image: ^3.3.0
+  shimmer: ^3.0.0
+  flutter_svg: ^2.0.9
+  lottie: ^3.3.2
+  image_picker: ^1.0.4
+  image_cropper: ^11.0.0
+  video_player: ^2.8.1
+  photo_view: ^0.15.0
+  carousel_slider: ^5.1.1
+
+  # Forms & Validation
+  intl_phone_field: ^3.2.0
+  pin_code_fields: ^8.0.1
+  form_builder_validators: ^11.2.0
+
+  # Utilities
+  intl: ^0.20.2
+  url_launcher: ^6.2.1
+  permission_handler: ^12.0.1
+  package_info_plus: ^9.0.0
+  timeago: ^3.6.0
+
+  # Internationalization & Fonts
+  flutter_localizations:
+    sdk: flutter
+  google_fonts: ^6.1.0
+
+  # Functional Programming
+  dartz: ^0.10.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Linting
+  flutter_lints: ^6.0.0
+
+  # Code Generation
+  build_runner: ^2.4.6
+  retrofit_generator: ^8.0.4
+  injectable_generator: ^2.4.0
+  hive_generator: ^2.0.1
+
+  # Testing
+  mockito: ^5.4.3
+  bloc_test: ^10.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Localization
+  generate: true
+
+  # Assets
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+
+  # Fonts (Using Google Fonts: Tomorrow for English, Cairo for Arabic)
+  # Google Fonts will be loaded at runtime, no need for local font files

@@ -1,0 +1,65 @@
+import 'package:equatable/equatable.dart';
+import '../../domain/entities/user.dart';
+
+abstract class AuthEvent extends Equatable {
+  const AuthEvent();
+
+  @override
+  List<Object?> get props => [];
+}
+
+class AuthCheckRequested extends AuthEvent {
+  const AuthCheckRequested();
+}
+
+class PhoneAuthRequested extends AuthEvent {
+  final String phoneNumber;
+
+  const PhoneAuthRequested({required this.phoneNumber});
+
+  @override
+  List<Object?> get props => [phoneNumber];
+}
+
+class OTPVerificationRequested extends AuthEvent {
+  final String verificationId;
+  final String otp;
+
+  const OTPVerificationRequested({
+    required this.verificationId,
+    required this.otp,
+  });
+
+  @override
+  List<Object?> get props => [verificationId, otp];
+}
+
+class RegistrationRequested extends AuthEvent {
+  final String firebaseUid;
+  final Map<String, dynamic> userData;
+
+  const RegistrationRequested({
+    required this.firebaseUid,
+    required this.userData,
+  });
+
+  @override
+  List<Object?> get props => [firebaseUid, userData];
+}
+
+class FirebaseLoginRequested extends AuthEvent {
+  const FirebaseLoginRequested();
+}
+
+class LogoutRequested extends AuthEvent {
+  const LogoutRequested();
+}
+
+class AuthUserUpdated extends AuthEvent {
+  final UserEntity? user;
+
+  const AuthUserUpdated({this.user});
+
+  @override
+  List<Object?> get props => [user];
+}
