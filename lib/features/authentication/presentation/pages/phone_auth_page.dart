@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
-import '../../../../core/di/injection.dart';
 import '../../../../core/navigation/routes.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../l10n/app_localizations_temp.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
@@ -45,9 +45,24 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
         return;
       }
 
-      context.read<AuthBloc>().add(
-            PhoneAuthRequested(phoneNumber: _completePhoneNumber),
-          );
+      // Bypass OTP for testing if flag is enabled
+      if (AppConstants.bypassOTPVerification) {
+        // Skip Firebase OTP and go directly to OTP verification screen with test ID
+        Navigator.pushNamed(
+          context,
+          AppRoutes.otpVerification,
+          arguments: {
+            'verificationId': AppConstants.testVerificationId,
+            'phoneNumber': _completePhoneNumber,
+            'mode': widget.mode,
+          },
+        );
+      } else {
+        // Normal flow - send OTP via Firebase
+        context.read<AuthBloc>().add(
+              PhoneAuthRequested(phoneNumber: _completePhoneNumber),
+            );
+      }
     }
   }
 
@@ -55,15 +70,13 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return BlocProvider(
-      create: (_) => getIt<AuthBloc>(),
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-        ),
-        body: BlocConsumer<AuthBloc, AuthState>(
-          listener: (context, state) {
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: BlocConsumer<AuthBloc, AuthState>(
+        listener: (context, state) {
             if (state is PhoneAuthCodeSent) {
               Navigator.pushNamed(
                 context,
@@ -306,7 +319,6 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
             );
           },
         ),
-      ),
     );
   }
 }

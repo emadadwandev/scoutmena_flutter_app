@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/navigation/routes.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../../../../l10n/app_localizations_temp.dart';
 import '../bloc/auth_bloc.dart';
 import '../bloc/auth_event.dart';
@@ -41,8 +42,8 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   @override
   void dispose() {
-    _otpController.dispose();
     _timer?.cancel();
+    _otpController.dispose();
     super.dispose();
   }
 
@@ -53,6 +54,12 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     });
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      // Check if widget is still mounted before calling setState
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      
       setState(() {
         if (_secondsRemaining > 0) {
           _secondsRemaining--;
@@ -73,12 +80,36 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   void _onVerifyOTP() {
     if (_formKey.currentState!.validate()) {
-      context.read<AuthBloc>().add(
-            OTPVerificationRequested(
-              verificationId: widget.verificationId,
-              otp: _otpController.text,
+      // Bypass OTP for testing if flag is enabled
+      if (AppConstants.bypassOTPVerification) {
+        // Check if the entered OTP matches the test OTP
+        if (_otpController.text == AppConstants.testOTP) {
+          // Go directly to registration since this is a new user in testing
+          Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.registration,
+            arguments: {
+              'firebaseUid': 'test-user-${DateTime.now().millisecondsSinceEpoch}',
+              'phoneNumber': widget.phoneNumber,
+            },
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Invalid OTP. Use ${AppConstants.testOTP} for testing'),
+              backgroundColor: Colors.red,
             ),
           );
+        }
+      } else {
+        // Normal flow - verify OTP via Firebase
+        context.read<AuthBloc>().add(
+              OTPVerificationRequested(
+                verificationId: widget.verificationId,
+                otp: _otpController.text,
+              ),
+            );
+      }
     }
   }
 
@@ -96,11 +127,15 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AuthRegistrationRequired) {
-              // For both login and register modes, go to role selection if user doesn't exist
+              // New user needs to register - go directly to registration form
+              // User will select role and enter details in the registration form
               Navigator.pushReplacementNamed(
                 context,
-                AppRoutes.roleSelection,
-                arguments: {'firebaseUid': state.firebaseUid},
+                AppRoutes.registration,
+                arguments: {
+                  'firebaseUid': state.firebaseUid,
+                  'phoneNumber': widget.phoneNumber,
+                },
               );
             } else if (state is AuthAuthenticated) {
               // User already exists, logged in successfully

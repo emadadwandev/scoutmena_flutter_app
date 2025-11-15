@@ -53,6 +53,19 @@ class FileFailure extends Failure {
   const FileFailure({required super.message});
 }
 
+/// Parental consent required failure (minor registration)
+class ParentalConsentRequiredFailure extends Failure {
+  final String? consentId;
+
+  const ParentalConsentRequiredFailure({
+    required super.message,
+    this.consentId,
+  });
+
+  @override
+  List<Object?> get props => [message, consentId];
+}
+
 /// Unknown/Generic failure
 class UnknownFailure extends Failure {
   const UnknownFailure({required super.message});

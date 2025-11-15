@@ -2,6 +2,8 @@
 class AppRoutes {
   // Auth Routes
   static const String splash = '/';
+  static const String onboarding = '/onboarding';
+  static const String login = '/login';
   static const String phoneAuth = '/phone-auth';
   static const String otpVerification = '/otp-verification';
   static const String roleSelection = '/role-selection';
@@ -17,7 +19,9 @@ class AppRoutes {
   static const String videoUpload = '/player/videos/upload';
   static const String videoGallery = '/player/videos/gallery';
   static const String statistics = '/player/statistics';
+  static const String statsManagement = '/player/stats/manage';
   static const String analytics = '/player/analytics';
+  static const String profileAnalytics = '/player/profile/analytics';
 
   // Scout Routes
   static const String scoutDashboard = '/scout/dashboard';

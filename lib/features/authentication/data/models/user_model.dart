@@ -3,10 +3,10 @@ import '../../domain/entities/user.dart';
 
 class UserModel extends Equatable {
   final String id;
-  final String firebaseUid;
+  final String? firebaseUid; // Made nullable for email/password login
   final String name;
   final String? email;
-  final String phone;
+  final String? phone; // Made nullable to match backend response
   final String accountType;
   final String? dateOfBirth;
   final String? country;
@@ -22,7 +22,7 @@ class UserModel extends Equatable {
     required this.firebaseUid,
     required this.name,
     this.email,
-    required this.phone,
+    this.phone, // Made optional
     required this.accountType,
     this.dateOfBirth,
     this.country,
@@ -36,11 +36,11 @@ class UserModel extends Equatable {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'] as String,
-      firebaseUid: json['firebase_uid'] as String,
+      id: json['id'].toString(), // Convert int to String
+      firebaseUid: json['firebase_uid']?.toString(), // Handle null for email/password login
       name: json['name'] as String,
       email: json['email'] as String?,
-      phone: json['phone'] as String,
+      phone: json['phone']?.toString(), // Handle null phone and convert to String
       accountType: json['account_type'] as String,
       dateOfBirth: json['date_of_birth'] as String?,
       country: json['country'] as String?,

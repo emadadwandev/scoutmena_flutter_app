@@ -51,6 +51,19 @@ class FirebaseLoginRequested extends AuthEvent {
   const FirebaseLoginRequested();
 }
 
+class EmailPasswordLoginRequested extends AuthEvent {
+  final String email;
+  final String password;
+
+  const EmailPasswordLoginRequested({
+    required this.email,
+    required this.password,
+  });
+
+  @override
+  List<Object?> get props => [email, password];
+}
+
 class LogoutRequested extends AuthEvent {
   const LogoutRequested();
 }

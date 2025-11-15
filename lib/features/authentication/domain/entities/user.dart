@@ -2,10 +2,10 @@ import 'package:equatable/equatable.dart';
 
 class UserEntity extends Equatable {
   final String id;
-  final String firebaseUid;
+  final String? firebaseUid; // Made nullable for email/password login
   final String name;
   final String? email;
-  final String phone;
+  final String? phone; // Made nullable to match backend response
   final String accountType;
   final String? dateOfBirth;
   final String? country;
@@ -21,7 +21,7 @@ class UserEntity extends Equatable {
     required this.firebaseUid,
     required this.name,
     this.email,
-    required this.phone,
+    this.phone, // Made optional
     required this.accountType,
     this.dateOfBirth,
     this.country,

@@ -2,15 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/di/injection.dart';
 import 'core/theme/app_theme.dart';
 import 'core/navigation/routes.dart';
+import 'core/services/notification_service.dart';
 import 'firebase_options.dart';
 import 'l10n/app_localizations_temp.dart';
+import 'features/onboarding/presentation/pages/splash_screen.dart';
+import 'features/onboarding/presentation/pages/onboarding_page.dart';
+import 'features/authentication/presentation/pages/login_page.dart';
 import 'features/authentication/presentation/pages/phone_auth_page.dart';
 import 'features/authentication/presentation/pages/otp_verification_page.dart';
 import 'features/authentication/presentation/pages/role_selection_page.dart';
 import 'features/authentication/presentation/pages/registration_page.dart';
+import 'features/authentication/presentation/bloc/auth_bloc.dart';
+import 'features/player_profile/presentation/pages/player_dashboard_page.dart';
+import 'features/player_profile/presentation/pages/player_profile_setup_page.dart';
+import 'features/player_profile/presentation/pages/player_profile_view_page.dart';
+import 'features/player_profile/presentation/pages/photo_gallery_management_page.dart';
+import 'features/player_profile/presentation/pages/video_gallery_management_page.dart';
+import 'features/player_profile/presentation/pages/statistics_management_page.dart';
+import 'features/player_profile/presentation/pages/profile_analytics_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,6 +41,15 @@ void main() async {
 
   // Initialize dependency injection
   await configureDependencies();
+
+  // Initialize push notifications
+  try {
+    final notificationService = getIt<NotificationService>();
+    await notificationService.initialize();
+  } catch (e) {
+    debugPrint('Failed to initialize notifications: $e');
+    // Don't block app launch if notifications fail
+  }
 
   runApp(const ScoutMenaApp());
 }
@@ -86,18 +108,30 @@ class _ScoutMenaAppState extends State<ScoutMenaApp> {
       themeMode: _themeMode,
 
       // Routing
-      initialRoute: AppRoutes.phoneAuth,
+      initialRoute: AppRoutes.splash,
       onGenerateRoute: _generateRoute,
     );
   }
 
   Route<dynamic>? _generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case AppRoutes.splash:
+        return MaterialPageRoute(builder: (_) => const SplashScreen());
+
+      case AppRoutes.onboarding:
+        return MaterialPageRoute(builder: (_) => const OnboardingPage());
+
+      case AppRoutes.login:
+        return MaterialPageRoute(builder: (_) => const LoginPage());
+
       case AppRoutes.phoneAuth:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => PhoneAuthPage(
-            mode: args?['mode'] as String? ?? 'login',
+          builder: (_) => BlocProvider(
+            create: (_) => getIt<AuthBloc>(),
+            child: PhoneAuthPage(
+              mode: args?['mode'] as String? ?? 'login',
+            ),
           ),
         );
 
@@ -124,17 +158,60 @@ class _ScoutMenaAppState extends State<ScoutMenaApp> {
         return MaterialPageRoute(
           builder: (_) => RegistrationPage(
             firebaseUid: args['firebaseUid'] as String,
-            accountType: args['accountType'] as String,
+            phoneNumber: args['phoneNumber'] as String,
+            accountType: args['accountType'] as String?, // Optional now
           ),
         );
 
+      case AppRoutes.playerProfileSetup:
+        return MaterialPageRoute(
+          builder: (_) => const PlayerProfileSetupPage(),
+        );
+
+      case AppRoutes.playerProfile:
+        final playerId = settings.arguments as String? ?? 'current';
+        return MaterialPageRoute(
+          builder: (_) => PlayerProfileViewPage(playerId: playerId),
+        );
+
+      case AppRoutes.playerProfileEdit:
+        // TODO: Fetch profile in the page or pass via arguments
+        // For now, redirect to profile setup if no profile exists
+        return MaterialPageRoute(
+          builder: (_) => const PlayerProfileSetupPage(),
+        );
+
+      case AppRoutes.photoGallery:
+        return MaterialPageRoute(
+          builder: (_) => const PhotoGalleryManagementPage(playerId: 'current'),
+        );
+
+      case AppRoutes.videoGallery:
+        return MaterialPageRoute(
+          builder: (_) => const VideoGalleryManagementPage(playerId: 'current'),
+        );
+
+      case AppRoutes.statsManagement:
+        return MaterialPageRoute(
+          builder: (_) => const StatisticsManagementPage(playerId: 'current'),
+        );
+
+      case AppRoutes.profileAnalytics:
+        return MaterialPageRoute(
+          builder: (_) => const ProfileAnalyticsPage(playerId: 'current'),
+        );
+
       case AppRoutes.playerDashboard:
+        return MaterialPageRoute(
+          builder: (_) => const PlayerDashboardPage(),
+        );
+
       case AppRoutes.scoutDashboard:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
-            appBar: AppBar(title: const Text('Dashboard')),
-            body: Center(
-              child: Text('${settings.name} - Coming in Phase 3'),
+            appBar: AppBar(title: const Text('Scout Dashboard')),
+            body: const Center(
+              child: Text('Scout Dashboard - Coming in Phase 4'),
             ),
           ),
         );

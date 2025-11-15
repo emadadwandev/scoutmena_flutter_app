@@ -61,6 +61,15 @@ class AuthRepositoryImpl implements AuthRepository {
         userData: userData,
       );
 
+      // Handle parental consent required case
+      if (response.requiresParentalConsent == true) {
+        // Return a special failure that indicates parental consent is needed
+        return Left(ParentalConsentRequiredFailure(
+          message: response.message,
+          consentId: response.consentSentTo,
+        ));
+      }
+
       if (response.user == null) {
         return Left(ServerFailure(message: 'Registration failed'));
       }
@@ -85,6 +94,31 @@ class AuthRepositoryImpl implements AuthRepository {
 
     try {
       final userModel = await remoteDataSource.loginWithFirebase();
+      await localDataSource.cacheUser(userModel);
+      return Right(userModel.toEntity());
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
+    } on CacheException catch (e) {
+      return Left(CacheFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Login failed'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> loginWithEmailPassword({
+    required String email,
+    required String password,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return Left(NetworkFailure(message: 'No internet connection'));
+    }
+
+    try {
+      final userModel = await remoteDataSource.loginWithEmailPassword(
+        email: email,
+        password: password,
+      );
       await localDataSource.cacheUser(userModel);
       return Right(userModel.toEntity());
     } on ServerException catch (e) {

@@ -62,6 +62,8 @@ class AppLocalizations {
   String get playerRoleDescription => locale.languageCode == 'ar' ? 'أنشئ ملفك الشخصي، اعرض موهبتك، واحصل على فرصة الاكتشاف من قبل الكشافة' : 'Create your profile, showcase your talent, and get discovered by scouts';
   String get scout => locale.languageCode == 'ar' ? 'كشاف' : 'Scout';
   String get scoutRoleDescription => locale.languageCode == 'ar' ? 'ابحث عن اللاعبين الموهوبين، احفظ عمليات البحث، واكتشف نجم كرة القدم القادم' : 'Find talented players, save searches, and discover the next football star';
+  String get coach => locale.languageCode == 'ar' ? 'مدرب' : 'Coach';
+  String get coachRoleDescription => locale.languageCode == 'ar' ? 'قم بتدريب وتطوير مواهب اللاعبين، وإدارة فريقك، وبناء أبطال المستقبل' : 'Train and develop player talents, manage your team, and build future champions';
   String get pleaseSelectRole => locale.languageCode == 'ar' ? 'يرجى اختيار دور للمتابعة' : 'Please select a role to continue';
   String get continueText => locale.languageCode == 'ar' ? 'متابعة' : 'Continue';
   

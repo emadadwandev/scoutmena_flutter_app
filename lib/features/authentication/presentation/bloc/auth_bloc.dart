@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/error/failures.dart';
+import '../../domain/entities/user.dart';
 import '../../domain/usecases/get_current_user.dart';
+import '../../domain/usecases/login_with_email_password.dart';
 import '../../domain/usecases/login_with_firebase.dart';
 import '../../domain/usecases/logout.dart';
 import '../../domain/usecases/register_user.dart';
@@ -15,6 +18,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final VerifyOTP verifyOTP;
   final RegisterUser registerUser;
   final LoginWithFirebase loginWithFirebase;
+  final LoginWithEmailPassword loginWithEmailPassword;
   final GetCurrentUser getCurrentUser;
   final Logout logout;
 
@@ -23,6 +27,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     required this.verifyOTP,
     required this.registerUser,
     required this.loginWithFirebase,
+    required this.loginWithEmailPassword,
     required this.getCurrentUser,
     required this.logout,
   }) : super(const AuthInitial()) {
@@ -31,6 +36,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<OTPVerificationRequested>(_onOTPVerificationRequested);
     on<RegistrationRequested>(_onRegistrationRequested);
     on<FirebaseLoginRequested>(_onFirebaseLoginRequested);
+    on<EmailPasswordLoginRequested>(_onEmailPasswordLoginRequested);
     on<LogoutRequested>(_onLogoutRequested);
     on<AuthUserUpdated>(_onAuthUserUpdated);
   }
@@ -106,6 +112,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     emit(const AuthLoading());
 
+    // Small delay to ensure Firebase is fully initialized after OTP verification
+    await Future.delayed(const Duration(milliseconds: 300));
+
     final result = await registerUser(
       RegisterUserParams(
         firebaseUid: event.firebaseUid,
@@ -114,16 +123,38 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     result.fold(
-      (failure) => emit(AuthError(message: failure.message)),
-      (user) {
-        if (user.isMinor) {
+      (failure) {
+        // Check if this is a parental consent required failure
+        if (failure is ParentalConsentRequiredFailure) {
+          // Create a minimal user entity for the parental consent state
+          // This is just for UI display, the actual account is locked on backend
+          final minorUser = UserEntity(
+            id: 'pending', // Placeholder ID
+            firebaseUid: event.firebaseUid,
+            name: event.userData['name'] as String,
+            email: event.userData['email'] as String,
+            phone: event.userData['phone'] as String?,
+            accountType: event.userData['account_type'] as String,
+            dateOfBirth: event.userData['date_of_birth'] as String?,
+            country: event.userData['country'] as String?,
+            isActive: false, // Account is locked pending consent
+            emailVerified: false,
+            phoneVerified: true, // Phone was verified via OTP
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+          
           emit(AuthParentalConsentRequired(
-            user: user,
-            consentSentTo: user.email,
+            user: minorUser,
+            consentSentTo: event.userData['parent_email'] as String?,
           ));
         } else {
-          emit(AuthAuthenticated(user: user));
+          emit(AuthError(message: failure.message));
         }
+      },
+      (user) {
+        // Normal registration success (adult user)
+        emit(AuthAuthenticated(user: user));
       },
     );
   }
@@ -135,6 +166,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(const AuthLoading());
 
     final result = await loginWithFirebase(NoParams());
+
+    result.fold(
+      (failure) => emit(AuthError(message: failure.message)),
+      (user) => emit(AuthAuthenticated(user: user)),
+    );
+  }
+
+  Future<void> _onEmailPasswordLoginRequested(
+    EmailPasswordLoginRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+
+    final result = await loginWithEmailPassword(
+      LoginWithEmailPasswordParams(
+        email: event.email,
+        password: event.password,
+      ),
+    );
 
     result.fold(
       (failure) => emit(AuthError(message: failure.message)),

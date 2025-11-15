@@ -43,6 +43,7 @@ class AppColors {
   // Role-Specific Colors
   static const Color playerPrimary = scoutBlue;
   static const Color scoutPrimary = scoutGreen;
+  static const Color coachPrimary = Color(0xFFEC4899); // Pink/Magenta for coaches
   static const Color parentPrimary = scoutOrange;
   static const Color adminPrimary = Color(0xFF8B5CF6);
 

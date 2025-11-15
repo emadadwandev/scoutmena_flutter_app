@@ -17,15 +17,18 @@ class AuthResponseModel extends Equatable {
   });
 
   factory AuthResponseModel.fromJson(Map<String, dynamic> json) {
+    // Check if this is a parental consent response
+    final data = json['data'] as Map<String, dynamic>?;
+    final requiresConsent = data?['requires_parental_consent'] as bool? ?? false;
+    
     return AuthResponseModel(
       success: json['success'] as bool? ?? true,
       message: json['message'] as String? ?? '',
-      user: json['data'] != null && json['data']['user'] != null
-          ? UserModel.fromJson(json['data']['user'] as Map<String, dynamic>)
+      user: data != null && data['user'] != null
+          ? UserModel.fromJson(data['user'] as Map<String, dynamic>)
           : null,
-      requiresParentalConsent:
-          json['data']?['requires_parental_consent'] as bool?,
-      consentSentTo: json['data']?['consent_sent_to'] as String?,
+      requiresParentalConsent: requiresConsent,
+      consentSentTo: data?['parental_consent_id'] as String?,
     );
   }
 

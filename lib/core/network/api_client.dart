@@ -33,13 +33,44 @@ class ApiClient {
       InterceptorsWrapper(
         onRequest: (options, handler) async {
           try {
-            // Get Firebase ID token from secure storage
-            final token = await _secureStorage.read(
+            // UI TESTING MODE: Use mock token if bypass is enabled
+            if (AppConstants.enableUITestingMode && AppConstants.bypassFirebaseAuth) {
+              // First check for auth token (Sanctum), then fallback to mock Firebase token
+              final authToken = await _secureStorage.read(
+                key: AppConstants.keyAuthToken,
+              );
+              
+              if (authToken != null && authToken.isNotEmpty) {
+                print('🔑 Using Sanctum token (testing mode): ${authToken.substring(0, 20)}...');
+                options.headers['Authorization'] = 'Bearer $authToken';
+              } else {
+                print('🔑 Using mock Firebase token (testing mode)');
+                options.headers['Authorization'] = 'Bearer ${AppConstants.mockFirebaseToken}';
+              }
+              return handler.next(options);
+            }
+            
+            // Priority 1: Check for Sanctum auth token (from email/password login)
+            final authToken = await _secureStorage.read(
+              key: AppConstants.keyAuthToken,
+            );
+            
+            if (authToken != null && authToken.isNotEmpty) {
+              print('🔑 Using Sanctum auth token: ${authToken.substring(0, 20)}...');
+              options.headers['Authorization'] = 'Bearer $authToken';
+              return handler.next(options);
+            }
+            
+            // Priority 2: Get Firebase ID token from secure storage
+            final firebaseToken = await _secureStorage.read(
               key: AppConstants.keyFirebaseToken,
             );
 
-            if (token != null && token.isNotEmpty) {
-              options.headers['Authorization'] = 'Bearer $token';
+            if (firebaseToken != null && firebaseToken.isNotEmpty) {
+              print('🔑 Using Firebase token: ${firebaseToken.substring(0, 20)}...');
+              options.headers['Authorization'] = 'Bearer $firebaseToken';
+            } else {
+              print('⚠️ No auth token found in storage!');
             }
 
             return handler.next(options);
@@ -94,6 +125,27 @@ class ApiClient {
 
   /// Get Dio instance for direct use
   Dio get dio => _dio;
+
+  /// Store authentication token (Sanctum token from email/password login)
+  Future<void> setAuthToken(String token) async {
+    await _secureStorage.write(
+      key: AppConstants.keyAuthToken,
+      value: token,
+    );
+  }
+
+  /// Clear authentication token
+  Future<void> clearAuthToken() async {
+    await _secureStorage.delete(key: AppConstants.keyAuthToken);
+  }
+
+  /// Clear all stored tokens (auth + Firebase)
+  Future<void> clearAllTokens() async {
+    print('🗑️ Clearing all stored tokens...');
+    await _secureStorage.delete(key: AppConstants.keyAuthToken);
+    await _secureStorage.delete(key: AppConstants.keyFirebaseToken);
+    print('✅ All tokens cleared');
+  }
 
   /// Refresh Firebase authentication token
   Future<bool> _refreshFirebaseToken() async {
