@@ -12,7 +12,6 @@ TeamModel _$TeamModelFromJson(Map<String, dynamic> json) => TeamModel(
       teamName: json['teamName'] as String,
       ageGroup: json['ageGroup'] as String,
       clubName: json['clubName'] as String?,
-      playerCount: (json['playerCount'] as num).toInt(),
       playerIds:
           (json['playerIds'] as List<dynamic>).map((e) => e as String).toList(),
       season: json['season'] as String,
@@ -24,11 +23,10 @@ Map<String, dynamic> _$TeamModelToJson(TeamModel instance) => <String, dynamic>{
       'id': instance.id,
       'coachId': instance.coachId,
       'teamName': instance.teamName,
-      'ageGroup': instance.ageGroup,
       'clubName': instance.clubName,
-      'playerCount': instance.playerCount,
-      'playerIds': instance.playerIds,
       'season': instance.season,
+      'ageGroup': instance.ageGroup,
+      'playerIds': instance.playerIds,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt.toIso8601String(),
     };

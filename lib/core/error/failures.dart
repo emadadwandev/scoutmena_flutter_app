@@ -66,6 +66,32 @@ class ParentalConsentRequiredFailure extends Failure {
   List<Object?> get props => [message, consentId];
 }
 
+/// User not found failure (login attempt for non-existent user)
+class UserNotFoundFailure extends Failure {
+  final bool requiresRegistration;
+
+  const UserNotFoundFailure({
+    required super.message,
+    this.requiresRegistration = true,
+  });
+
+  @override
+  List<Object?> get props => [message, requiresRegistration];
+}
+
+/// Rate limit exceeded failure (too many requests)
+class RateLimitFailure extends Failure {
+  final int? retryAfter; // Seconds until retry is allowed
+
+  const RateLimitFailure({
+    required super.message,
+    this.retryAfter,
+  });
+
+  @override
+  List<Object?> get props => [message, retryAfter];
+}
+
 /// Unknown/Generic failure
 class UnknownFailure extends Failure {
   const UnknownFailure({required super.message});

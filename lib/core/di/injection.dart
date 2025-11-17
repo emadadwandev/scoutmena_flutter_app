@@ -22,7 +22,12 @@ import '../../features/authentication/domain/usecases/login_with_firebase.dart';
 import '../../features/authentication/domain/usecases/login_with_email_password.dart';
 import '../../features/authentication/domain/usecases/get_current_user.dart';
 import '../../features/authentication/domain/usecases/logout.dart';
+import '../../features/authentication/domain/usecases/send_brevo_otp.dart';
+import '../../features/authentication/domain/usecases/verify_brevo_otp.dart';
+import '../../features/authentication/domain/usecases/register_with_brevo_otp.dart';
+import '../../features/authentication/domain/usecases/login_with_brevo_otp.dart';
 import '../../features/authentication/presentation/bloc/auth_bloc.dart';
+import '../services/brevo_otp_service.dart';
 import '../../features/player_profile/data/datasources/player_remote_data_source.dart';
 import '../../features/player_profile/data/repositories/player_repository_impl.dart';
 import '../../features/player_profile/domain/repositories/player_repository.dart';
@@ -88,6 +93,11 @@ Future<void> configureDependencies() async {
     () => FirebaseAuthService(getIt<FlutterSecureStorage>()),
   );
 
+  // Register Brevo OTP Service
+  getIt.registerLazySingleton<BrevoOtpService>(
+    () => BrevoOtpService(getIt<ApiClient>()),
+  );
+
   // Register FlutterLocalNotificationsPlugin
   getIt.registerLazySingleton<FlutterLocalNotificationsPlugin>(
     () => FlutterLocalNotificationsPlugin(),
@@ -120,11 +130,12 @@ Future<void> configureDependencies() async {
       remoteDataSource: getIt<AuthRemoteDataSource>(),
       localDataSource: getIt<AuthLocalDataSource>(),
       firebaseAuthService: getIt<FirebaseAuthService>(),
+      brevoOtpService: getIt<BrevoOtpService>(),
       networkInfo: getIt<NetworkInfo>(),
     ),
   );
 
-  // Register Authentication Use Cases
+  // Register Authentication Use Cases (Legacy Firebase)
   getIt.registerLazySingleton(() => SignInWithPhone(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => VerifyOTP(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => RegisterUser(getIt<AuthRepository>()));
@@ -132,6 +143,12 @@ Future<void> configureDependencies() async {
   getIt.registerLazySingleton(() => LoginWithEmailPassword(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => GetCurrentUser(getIt<AuthRepository>()));
   getIt.registerLazySingleton(() => Logout(getIt<AuthRepository>()));
+
+  // Register Brevo OTP Use Cases
+  getIt.registerLazySingleton(() => SendBrevoOtp(getIt<AuthRepository>()));
+  getIt.registerLazySingleton(() => VerifyBrevoOtp(getIt<AuthRepository>()));
+  getIt.registerLazySingleton(() => RegisterWithBrevoOtp(getIt<AuthRepository>()));
+  getIt.registerLazySingleton(() => LoginWithBrevoOtp(getIt<AuthRepository>()));
 
   // Register Authentication BLoC
   getIt.registerFactory(
@@ -143,6 +160,10 @@ Future<void> configureDependencies() async {
       loginWithEmailPassword: getIt<LoginWithEmailPassword>(),
       getCurrentUser: getIt<GetCurrentUser>(),
       logout: getIt<Logout>(),
+      sendBrevoOtp: getIt<SendBrevoOtp>(),
+      verifyBrevoOtp: getIt<VerifyBrevoOtp>(),
+      registerWithBrevoOtp: getIt<RegisterWithBrevoOtp>(),
+      loginWithBrevoOtp: getIt<LoginWithBrevoOtp>(),
     ),
   );
 

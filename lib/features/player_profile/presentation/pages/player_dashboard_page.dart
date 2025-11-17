@@ -346,22 +346,20 @@ class _PlayerDashboardPageState extends State<PlayerDashboardPage> {
   }
 
   Widget _buildProfileTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.person, size: 80, color: Colors.grey),
-          const SizedBox(height: 16),
-          const Text('Full Profile View'),
-          const SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.playerProfile);
-            },
-            child: const Text('View Full Profile'),
-          ),
-        ],
-      ),
+    // TODO: Get actual user ID from AuthBloc
+    // For now using 'current' which should be replaced with actual logged-in user ID
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.pushNamed(
+        context,
+        AppRoutes.playerProfile,
+        arguments: 'current', // This will be replaced with actual user ID from auth
+      );
+      // Reset to home tab after navigation
+      setState(() => _selectedIndex = 0);
+    });
+
+    return const Center(
+      child: CircularProgressIndicator(),
     );
   }
 

@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/coach_profile.dart';
-import '../../domain/entities/team.dart';
+import '../../domain/entities/coach_team.dart';
 import '../../domain/repositories/coach_repository.dart';
 import '../datasources/coach_remote_data_source.dart';
 

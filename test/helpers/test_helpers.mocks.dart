@@ -16,7 +16,7 @@ import 'package:scoutmena_app/features/authentication/domain/repositories/auth_r
     as _i3;
 import 'package:scoutmena_app/features/coach_profile/domain/entities/coach_profile.dart'
     as _i20;
-import 'package:scoutmena_app/features/coach_profile/domain/entities/team.dart'
+import 'package:scoutmena_app/features/coach_profile/domain/entities/coach_team.dart'
     as _i21;
 import 'package:scoutmena_app/features/coach_profile/domain/repositories/coach_repository.dart'
     as _i19;
@@ -125,6 +125,138 @@ class MockAuthRepository extends _i1.Mock implements _i3.AuthRepository {
       ) as _i4.Future<_i2.Either<_i6.Failure, _i5.User>>);
 
   @override
+  _i4.Future<_i2.Either<_i6.Failure, String>> sendBrevoOtp({
+    required String? phoneNumber,
+    String? method = r'sms',
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #sendBrevoOtp,
+          [],
+          {
+            #phoneNumber: phoneNumber,
+            #method: method,
+          },
+        ),
+        returnValue: _i4.Future<_i2.Either<_i6.Failure, String>>.value(
+            _FakeEither_0<_i6.Failure, String>(
+          this,
+          Invocation.method(
+            #sendBrevoOtp,
+            [],
+            {
+              #phoneNumber: phoneNumber,
+              #method: method,
+            },
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i6.Failure, String>>);
+
+  @override
+  _i4.Future<_i2.Either<_i6.Failure, String>> verifyBrevoOtp({
+    required String? verificationId,
+    required String? otp,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #verifyBrevoOtp,
+          [],
+          {
+            #verificationId: verificationId,
+            #otp: otp,
+          },
+        ),
+        returnValue: _i4.Future<_i2.Either<_i6.Failure, String>>.value(
+            _FakeEither_0<_i6.Failure, String>(
+          this,
+          Invocation.method(
+            #verifyBrevoOtp,
+            [],
+            {
+              #verificationId: verificationId,
+              #otp: otp,
+            },
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i6.Failure, String>>);
+
+  @override
+  _i4.Future<_i2.Either<_i6.Failure, String>> resendBrevoOtp(
+          {required String? verificationId}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #resendBrevoOtp,
+          [],
+          {#verificationId: verificationId},
+        ),
+        returnValue: _i4.Future<_i2.Either<_i6.Failure, String>>.value(
+            _FakeEither_0<_i6.Failure, String>(
+          this,
+          Invocation.method(
+            #resendBrevoOtp,
+            [],
+            {#verificationId: verificationId},
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i6.Failure, String>>);
+
+  @override
+  _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>> registerWithBrevoOtp({
+    required String? verificationId,
+    required Map<String, dynamic>? userData,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #registerWithBrevoOtp,
+          [],
+          {
+            #verificationId: verificationId,
+            #userData: userData,
+          },
+        ),
+        returnValue: _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>>.value(
+            _FakeEither_0<_i6.Failure, _i7.UserEntity>(
+          this,
+          Invocation.method(
+            #registerWithBrevoOtp,
+            [],
+            {
+              #verificationId: verificationId,
+              #userData: userData,
+            },
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>>);
+
+  @override
+  _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>> loginWithBrevoOtp({
+    required String? verificationId,
+    required String? accountType,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #loginWithBrevoOtp,
+          [],
+          {
+            #verificationId: verificationId,
+            #accountType: accountType,
+          },
+        ),
+        returnValue: _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>>.value(
+            _FakeEither_0<_i6.Failure, _i7.UserEntity>(
+          this,
+          Invocation.method(
+            #loginWithBrevoOtp,
+            [],
+            {
+              #verificationId: verificationId,
+              #accountType: accountType,
+            },
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>>);
+
+  @override
   _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>> register({
     required String? firebaseUid,
     required Map<String, dynamic>? userData,
@@ -165,6 +297,34 @@ class MockAuthRepository extends _i1.Mock implements _i3.AuthRepository {
           Invocation.method(
             #loginWithFirebase,
             [],
+          ),
+        )),
+      ) as _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>>);
+
+  @override
+  _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>> loginWithEmailPassword({
+    required String? email,
+    required String? password,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #loginWithEmailPassword,
+          [],
+          {
+            #email: email,
+            #password: password,
+          },
+        ),
+        returnValue: _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>>.value(
+            _FakeEither_0<_i6.Failure, _i7.UserEntity>(
+          this,
+          Invocation.method(
+            #loginWithEmailPassword,
+            [],
+            {
+              #email: email,
+              #password: password,
+            },
           ),
         )),
       ) as _i4.Future<_i2.Either<_i6.Failure, _i7.UserEntity>>);

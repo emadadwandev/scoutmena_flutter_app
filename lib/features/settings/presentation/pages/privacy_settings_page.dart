@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/navigation/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Privacy settings screen
@@ -196,10 +197,7 @@ class _PrivacySettingsPageState extends State<PrivacySettingsPage> {
       subtitle: const Text('0 users blocked'),
       trailing: const Icon(Icons.chevron_right),
       onTap: () {
-        // TODO: Navigate to blocked users list
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Blocked users list coming soon')),
-        );
+        Navigator.pushNamed(context, AppRoutes.blockedUsers);
       },
     );
   }

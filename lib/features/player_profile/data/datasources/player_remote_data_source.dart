@@ -92,10 +92,80 @@ class PlayerRemoteDataSourceImpl implements PlayerRemoteDataSource {
   Future<PlayerProfileModel> getPlayerProfile(String playerId) async {
     try {
       final response = await _dio.get('/player/profile/$playerId');
-      return PlayerProfileModel.fromJson(response.data['data']);
-    } catch (e) {
+      // Transform current API response to match Flutter model structure
+      final adapted = _adaptApiResponseToModel(response.data['data']);
+      print('DEBUG: Adapted profile data: $adapted');
+      final model = PlayerProfileModel.fromJson(adapted);
+      print('DEBUG: Profile model created successfully');
+      return model;
+    } catch (e, stackTrace) {
+      print('ERROR in getPlayerProfile: $e');
+      print('Stack trace: $stackTrace');
       throw _handleError(e);
     }
+  }
+
+  /// Adapt current API response structure to Flutter model structure
+  Map<String, dynamic> _adaptApiResponseToModel(Map<String, dynamic> apiData) {
+    // Extract nested data
+    final location = apiData['location'] as Map<String, dynamic>?;
+    final physical = apiData['physical'] as Map<String, dynamic>?;
+    final football = apiData['football'] as Map<String, dynamic>?;
+    
+    // Parse positions - convert primary_position to array format
+    final primaryPos = football?['primary_position'] as String?;
+    final secondaryPos = football?['secondary_positions'] as String?;
+    List<String> positions = [];
+    if (primaryPos != null && primaryPos.isNotEmpty) {
+      positions.add(primaryPos);
+    }
+    if (secondaryPos != null && secondaryPos.isNotEmpty) {
+      // Secondary positions might be comma-separated or empty string
+      final secondary = secondaryPos.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
+      positions.addAll(secondary);
+    }
+    if (positions.isEmpty) {
+      positions.add('striker'); // Default fallback
+    }
+    
+    // Calculate approximate dateOfBirth from age
+    final age = apiData['age'] as int?;
+    final dateOfBirth = age != null
+        ? DateTime(DateTime.now().year - age, 1, 1).toIso8601String()
+        : DateTime(2005, 1, 1).toIso8601String();
+    
+    // Map preferred_foot to dominantFoot
+    String dominantFoot = physical?['preferred_foot'] as String? ?? 'right';
+    
+    return {
+      'id': apiData['id'],
+      'userId': apiData['id'], // Using profile ID as userId for now
+      'fullName': apiData['full_name'] ?? '',
+      'dateOfBirth': dateOfBirth,
+      'nationality': location?['nationality'] ?? location?['country'] ?? 'Unknown',
+      'height': (physical?['height_cm'] as num?)?.toDouble() ?? 175.0,
+      'weight': (physical?['weight_kg'] as num?)?.toDouble() ?? 70.0,
+      'dominantFoot': dominantFoot,
+      'currentClub': football?['current_club'] ?? '',
+      'positions': positions,
+      'jerseyNumber': football?['jersey_number'],
+      'yearsPlaying': age != null && age > 10 ? age - 10 : 5,
+      'email': null,
+      'phoneNumber': null,
+      'instagramHandle': null,
+      'twitterHandle': null,
+      'profilePhotoUrl': null, // Will be populated from photos
+      'isMinor': apiData['is_minor'] ?? false,
+      'parentName': null,
+      'parentEmail': null,
+      'parentPhone': null,
+      'emergencyContact': null,
+      'parentalConsentGiven': !(apiData['is_minor'] ?? false),
+      'profileStatus': apiData['is_active'] == true ? 'active' : 'inactive',
+      'profileCompleteness': (apiData['metrics'] as Map?)?['completion_score'] ?? 50,
+      'createdAt': apiData['created_at'] ?? DateTime.now().toIso8601String(),
+      'updatedAt': apiData['updated_at'] ?? DateTime.now().toIso8601String(),
+    };
   }
 
   @override
@@ -157,10 +227,35 @@ class PlayerRemoteDataSourceImpl implements PlayerRemoteDataSource {
     try {
       final response = await _dio.get('/player/profile/$playerId/photos');
       final List<dynamic> photosJson = response.data['data'];
-      return photosJson.map((json) => PlayerPhotoModel.fromJson(json)).toList();
-    } catch (e) {
+      print('DEBUG: Parsing ${photosJson.length} photos');
+      final photos = photosJson.map((json) => PlayerPhotoModel.fromJson(_adaptPhotoResponse(json))).toList();
+      print('DEBUG: Photos parsed successfully');
+      return photos;
+    } catch (e, stackTrace) {
+      // Return empty list if photos don't exist (404) - this is not an error
+      if (e is DioException && e.response?.statusCode == 404) {
+        print('DEBUG: No photos found for player $playerId, returning empty list');
+        return [];
+      }
+      print('ERROR in getPlayerPhotos: $e');
+      print('Stack trace: $stackTrace');
       throw _handleError(e);
     }
+  }
+
+  /// Adapt current API photo response to Flutter model structure
+  Map<String, dynamic> _adaptPhotoResponse(Map<String, dynamic> apiData) {
+    final urls = apiData['urls'] as Map<String, dynamic>?;
+    return {
+      'id': apiData['id'],
+      'playerId': apiData['player_profile_id'] ?? apiData['player_id'] ?? 'current',
+      'photoUrl': urls?['original'] ?? '',
+      'thumbnailUrl': urls?['thumb'] ?? '',
+      'caption': apiData['caption'] ?? '',
+      'isPrimary': apiData['is_primary'] ?? false,
+      'order': apiData['display_order'] ?? 0,
+      'uploadedAt': apiData['created_at'] ?? DateTime.now().toIso8601String(),
+    };
   }
 
   @override
@@ -221,10 +316,42 @@ class PlayerRemoteDataSourceImpl implements PlayerRemoteDataSource {
     try {
       final response = await _dio.get('/player/profile/$playerId/videos');
       final List<dynamic> videosJson = response.data['data'];
-      return videosJson.map((json) => PlayerVideoModel.fromJson(json)).toList();
-    } catch (e) {
+      print('DEBUG: Parsing ${videosJson.length} videos');
+      final videos = videosJson.map((json) => PlayerVideoModel.fromJson(_adaptVideoResponse(json))).toList();
+      print('DEBUG: Videos parsed successfully');
+      return videos;
+    } catch (e, stackTrace) {
+      // Return empty list if videos don't exist (404) - this is not an error
+      if (e is DioException && e.response?.statusCode == 404) {
+        print('DEBUG: No videos found for player $playerId, returning empty list');
+        return [];
+      }
+      print('ERROR in getPlayerVideos: $e');
+      print('Stack trace: $stackTrace');
       throw _handleError(e);
     }
+  }
+
+  /// Adapt current API video response to Flutter model structure
+  Map<String, dynamic> _adaptVideoResponse(Map<String, dynamic> apiData) {
+    final urls = apiData['urls'] as Map<String, dynamic>?;
+    // Handle potentially empty or malformed URLs
+    final playbackUrl = urls?['playback_url']?.toString() ?? urls?['original']?.toString() ?? '';
+    final thumbnail = urls?['thumbnail']?.toString() ?? '';
+    
+    return {
+      'id': apiData['id'],
+      'playerId': apiData['player_profile_id'] ?? apiData['player_id'] ?? 'current',
+      'videoUrl': playbackUrl.isNotEmpty ? playbackUrl : '',
+      'thumbnailUrl': thumbnail.isNotEmpty ? thumbnail : '',
+      'title': apiData['title'] ?? '',
+      'description': apiData['description'] ?? '',
+      'durationSeconds': apiData['duration'] ?? 0,
+      'videoType': apiData['video_type'] ?? 'match_highlight',
+      'order': 0,
+      'views': apiData['view_count'] ?? 0,
+      'uploadedAt': apiData['created_at'] ?? DateTime.now().toIso8601String(),
+    };
   }
 
   @override
@@ -293,10 +420,45 @@ class PlayerRemoteDataSourceImpl implements PlayerRemoteDataSource {
     try {
       final response = await _dio.get('/player/profile/$playerId/stats');
       final List<dynamic> statsJson = response.data['data'];
-      return statsJson.map((json) => PlayerStatModel.fromJson(json)).toList();
-    } catch (e) {
+      print('DEBUG: Parsing ${statsJson.length} stats');
+      final stats = statsJson.map((json) => PlayerStatModel.fromJson(_adaptStatsResponse(json))).toList();
+      print('DEBUG: Stats parsed successfully');
+      return stats;
+    } catch (e, stackTrace) {
+      // Return empty list if stats don't exist (404) - this is not an error
+      if (e is DioException && e.response?.statusCode == 404) {
+        print('DEBUG: No stats found for player $playerId, returning empty list');
+        return [];
+      }
+      print('ERROR in getPlayerStats: $e');
+      print('Stack trace: $stackTrace');
       throw _handleError(e);
     }
+  }
+
+  /// Adapt current API stats response to Flutter model structure
+  Map<String, dynamic> _adaptStatsResponse(Map<String, dynamic> apiData) {
+    return {
+      'id': apiData['id'],
+      'playerId': apiData['player_profile_id'] ?? apiData['player_id'] ?? 'current',
+      'season': apiData['season'] ?? 'career',
+      'competition': apiData['competition'] ?? '',
+      'matchesPlayed': apiData['appearances'] ?? 0,
+      'minutesPlayed': apiData['minutes_played'] ?? 0,
+      'goals': apiData['goals'] ?? 0,
+      'assists': apiData['assists'] ?? 0,
+      'yellowCards': apiData['yellow_cards'] ?? 0,
+      'redCards': apiData['red_cards'] ?? 0,
+      'passAccuracy': null,
+      'shotsOnTarget': null,
+      'totalShots': null,
+      'tackles': null,
+      'interceptions': null,
+      'cleanSheets': null,
+      'saves': null,
+      'createdAt': apiData['created_at'] ?? DateTime.now().toIso8601String(),
+      'updatedAt': apiData['updated_at'] ?? DateTime.now().toIso8601String(),
+    };
   }
 
   @override

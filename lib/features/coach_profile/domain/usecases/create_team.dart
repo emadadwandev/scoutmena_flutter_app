@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart';
 import 'package:injectable/injectable.dart';
 import '../../../../core/error/failures.dart';
-import '../entities/team.dart';
+import '../entities/coach_team.dart';
 import '../repositories/coach_repository.dart';
 
 @lazySingleton

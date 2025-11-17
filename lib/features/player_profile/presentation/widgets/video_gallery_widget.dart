@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/player_video.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Video gallery widget displaying player videos
 class VideoGalleryWidget extends StatelessWidget {
@@ -17,6 +16,8 @@ class VideoGalleryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Card(
       margin: const EdgeInsets.all(16),
       elevation: 2,
@@ -30,7 +31,7 @@ class VideoGalleryWidget extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.videocam, color: AppColors.playerPrimary),
+                    Icon(Icons.videocam, color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
                       'Video Highlights',

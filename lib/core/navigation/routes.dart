@@ -16,8 +16,10 @@ class AppRoutes {
   static const String playerProfileEdit = '/player/profile-edit';
   static const String photoUpload = '/player/photos/upload';
   static const String photoGallery = '/player/photos/gallery';
+  static const String photoViewer = '/player/photos/viewer';
   static const String videoUpload = '/player/videos/upload';
   static const String videoGallery = '/player/videos/gallery';
+  static const String videoPlayer = '/player/videos/player';
   static const String statistics = '/player/statistics';
   static const String statsManagement = '/player/stats/manage';
   static const String analytics = '/player/analytics';
@@ -45,6 +47,10 @@ class AppRoutes {
   static const String helpSupport = '/settings/help-support';
   static const String termsOfService = '/terms-of-service';
   static const String privacyPolicy = '/privacy-policy';
+  static const String faq = '/faq';
+  static const String tutorials = '/tutorials';
+  static const String blockedUsers = '/settings/blocked-users';
+  static const String messaging = '/messaging';
 
   AppRoutes._();
 }

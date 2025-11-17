@@ -4,21 +4,25 @@ import '../../../../core/error/exceptions.dart';
 import '../../../../core/error/failures.dart';
 import '../../../../core/network/network_info.dart';
 import '../../../../core/services/firebase_auth_service.dart';
+import '../../../../core/services/brevo_otp_service.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_datasource.dart';
 import '../datasources/auth_remote_datasource.dart';
+import '../models/user_model.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final AuthLocalDataSource localDataSource;
   final FirebaseAuthService firebaseAuthService;
+  final BrevoOtpService brevoOtpService;
   final NetworkInfo networkInfo;
 
   AuthRepositoryImpl({
     required this.remoteDataSource,
     required this.localDataSource,
     required this.firebaseAuthService,
+    required this.brevoOtpService,
     required this.networkInfo,
   });
 
@@ -151,6 +155,133 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(CacheFailure(message: e.message));
     } catch (e) {
       return Left(ServerFailure(message: 'Failed to get current user'));
+    }
+  }
+
+  // ===== BREVO OTP METHODS =====
+
+  @override
+  Future<Either<Failure, String>> sendBrevoOtp({
+    required String phoneNumber,
+    String method = 'sms',
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return Left(NetworkFailure(message: 'No internet connection'));
+    }
+
+    return await brevoOtpService.sendOtp(
+      phoneNumber: phoneNumber,
+      method: method,
+    );
+  }
+
+  @override
+  Future<Either<Failure, String>> verifyBrevoOtp({
+    required String verificationId,
+    required String otp,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return Left(NetworkFailure(message: 'No internet connection'));
+    }
+
+    return await brevoOtpService.verifyOtp(
+      verificationId: verificationId,
+      otp: otp,
+    );
+  }
+
+  @override
+  Future<Either<Failure, String>> resendBrevoOtp({
+    required String verificationId,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return Left(NetworkFailure(message: 'No internet connection'));
+    }
+
+    return await brevoOtpService.resendOtp(
+      verificationId: verificationId,
+    );
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> registerWithBrevoOtp({
+    required String verificationId,
+    required Map<String, dynamic> userData,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return Left(NetworkFailure(message: 'No internet connection'));
+    }
+
+    try {
+      final result = await brevoOtpService.registerWithOtp(
+        verificationId: verificationId,
+        userData: userData,
+      );
+
+      return result.fold(
+        (failure) => Left(failure),
+        (data) async {
+          // Handle parental consent required case
+          if (data['requires_parental_consent'] == true) {
+            return Left(ParentalConsentRequiredFailure(
+              message: data['message'] ?? 'Parental consent required',
+              consentId: data['parental_consent_id'],
+            ));
+          }
+
+          // Extract user from response
+          final userMap = data['user'] as Map<String, dynamic>;
+
+          // Create user model from response
+          final userModel = UserModel.fromJson(userMap);
+
+          // Cache user locally
+          await localDataSource.cacheUser(userModel);
+
+          return Right(userModel.toEntity());
+        },
+      );
+    } on CacheException catch (e) {
+      return Left(CacheFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Registration failed: $e'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, UserEntity>> loginWithBrevoOtp({
+    required String verificationId,
+    required String accountType,
+  }) async {
+    if (!await networkInfo.isConnected) {
+      return Left(NetworkFailure(message: 'No internet connection'));
+    }
+
+    try {
+      final result = await brevoOtpService.loginWithOtp(
+        verificationId: verificationId,
+        accountType: accountType,
+      );
+
+      return result.fold(
+        (failure) => Left(failure),
+        (data) async {
+          // Extract user from response
+          final userMap = data['user'] as Map<String, dynamic>;
+
+          // Create user model from response
+          final userModel = UserModel.fromJson(userMap);
+
+          // Cache user locally
+          await localDataSource.cacheUser(userModel);
+
+          return Right(userModel.toEntity());
+        },
+      );
+    } on CacheException catch (e) {
+      return Left(CacheFailure(message: e.message));
+    } catch (e) {
+      return Left(ServerFailure(message: 'Login failed: $e'));
     }
   }
 

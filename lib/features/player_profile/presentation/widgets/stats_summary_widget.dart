@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/player_stat.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Statistics summary widget displaying aggregated player stats
 class StatsSummaryWidget extends StatelessWidget {
@@ -13,6 +12,8 @@ class StatsSummaryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     if (stats.isEmpty) {
       return _buildEmptyState(context);
     }
@@ -29,7 +30,7 @@ class StatsSummaryWidget extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.bar_chart, color: AppColors.playerPrimary),
+                Icon(Icons.bar_chart, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Career Statistics',
@@ -98,7 +99,9 @@ class StatsSummaryWidget extends StatelessWidget {
               const Divider(),
               const SizedBox(height: 8),
               Text(
-                'Latest: ${stats.first.season} - ${stats.first.competition}',
+                stats.first.competition.isNotEmpty
+                    ? 'Latest: ${stats.first.season} - ${stats.first.competition}'
+                    : 'Latest: ${stats.first.season}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.grey[600],
                     ),
@@ -117,39 +120,49 @@ class StatsSummaryWidget extends StatelessWidget {
     IconData icon, {
     Color? iconColor,
   }) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppColors.playerPrimary.withOpacity(0.05),
+        color: theme.colorScheme.primary.withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: AppColors.playerPrimary.withOpacity(0.1),
+          color: theme.colorScheme.primary.withOpacity(0.1),
         ),
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
             icon,
-            size: 24,
-            color: iconColor ?? AppColors.playerPrimary,
+            size: 20,
+            color: iconColor ?? theme.colorScheme.primary,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
+          const SizedBox(height: 2),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[600],
+          Flexible(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),

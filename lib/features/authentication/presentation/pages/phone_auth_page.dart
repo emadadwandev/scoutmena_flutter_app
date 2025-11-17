@@ -47,7 +47,7 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
 
       // Bypass OTP for testing if flag is enabled
       if (AppConstants.bypassOTPVerification) {
-        // Skip Firebase OTP and go directly to OTP verification screen with test ID
+        // Skip Brevo OTP and go directly to OTP verification screen with test ID
         Navigator.pushNamed(
           context,
           AppRoutes.otpVerification,
@@ -58,9 +58,12 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
           },
         );
       } else {
-        // Normal flow - send OTP via Firebase
+        // Normal flow - send OTP via Brevo SMS/WhatsApp
         context.read<AuthBloc>().add(
-              PhoneAuthRequested(phoneNumber: _completePhoneNumber),
+              BrevoOtpSendRequested(
+                phoneNumber: _completePhoneNumber,
+                method: 'sms', // Use SMS by default
+              ),
             );
       }
     }
@@ -77,13 +80,21 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
       ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-            if (state is PhoneAuthCodeSent) {
+            // Handle both Brevo OTP (new) and Firebase (legacy) states
+            if (state is BrevoOtpSent || state is PhoneAuthCodeSent) {
+              final verificationId = state is BrevoOtpSent 
+                  ? state.verificationId 
+                  : (state as PhoneAuthCodeSent).verificationId;
+              final phoneNumber = state is BrevoOtpSent 
+                  ? state.phoneNumber 
+                  : (state as PhoneAuthCodeSent).phoneNumber;
+              
               Navigator.pushNamed(
                 context,
                 AppRoutes.otpVerification,
                 arguments: {
-                  'verificationId': state.verificationId,
-                  'phoneNumber': state.phoneNumber,
+                  'verificationId': verificationId,
+                  'phoneNumber': phoneNumber,
                   'mode': widget.mode, // Pass mode to OTP page
                 },
               );

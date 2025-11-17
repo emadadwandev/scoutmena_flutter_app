@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../player_profile/domain/entities/player_profile.dart';
+import '../../../../core/navigation/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Player detail view for scouts
@@ -610,9 +611,13 @@ Profile: https://scoutmena.com/players/${player.id}
               subtitle: const Text('Contact via ScoutMena messaging'),
               onTap: () {
                 Navigator.pop(context);
-                // TODO: Navigate to messaging screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Messaging feature coming soon')),
+                Navigator.pushNamed(
+                  context,
+                  AppRoutes.messaging,
+                  arguments: {
+                    'userId': widget.player.id,
+                    'userName': widget.player.fullName,
+                  },
                 );
               },
             ),

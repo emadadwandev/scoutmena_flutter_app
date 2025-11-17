@@ -76,3 +76,66 @@ class AuthUserUpdated extends AuthEvent {
   @override
   List<Object?> get props => [user];
 }
+
+// ===== BREVO OTP EVENTS =====
+
+class BrevoOtpSendRequested extends AuthEvent {
+  final String phoneNumber;
+  final String method; // 'sms' or 'whatsapp'
+
+  const BrevoOtpSendRequested({
+    required this.phoneNumber,
+    this.method = 'sms',
+  });
+
+  @override
+  List<Object?> get props => [phoneNumber, method];
+}
+
+class BrevoOtpVerificationRequested extends AuthEvent {
+  final String verificationId;
+  final String otp;
+
+  const BrevoOtpVerificationRequested({
+    required this.verificationId,
+    required this.otp,
+  });
+
+  @override
+  List<Object?> get props => [verificationId, otp];
+}
+
+class BrevoOtpResendRequested extends AuthEvent {
+  final String verificationId;
+
+  const BrevoOtpResendRequested({required this.verificationId});
+
+  @override
+  List<Object?> get props => [verificationId];
+}
+
+class BrevoRegistrationRequested extends AuthEvent {
+  final String verificationId;
+  final Map<String, dynamic> userData;
+
+  const BrevoRegistrationRequested({
+    required this.verificationId,
+    required this.userData,
+  });
+
+  @override
+  List<Object?> get props => [verificationId, userData];
+}
+
+class BrevoLoginRequested extends AuthEvent {
+  final String verificationId;
+  final String accountType;
+
+  const BrevoLoginRequested({
+    required this.verificationId,
+    required this.accountType,
+  });
+
+  @override
+  List<Object?> get props => [verificationId, accountType];
+}

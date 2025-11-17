@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/player_profile.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Profile header widget displaying photo and basic information
 class ProfileHeaderWidget extends StatelessWidget {
@@ -15,14 +14,16 @@ class ProfileHeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            AppColors.playerPrimary,
-            AppColors.playerPrimary.withOpacity(0.8),
+            theme.colorScheme.primary,
+            theme.colorScheme.primary.withOpacity(0.8),
           ],
         ),
       ),
@@ -79,6 +80,8 @@ class ProfileHeaderWidget extends StatelessWidget {
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: 4),
                         Row(
@@ -89,11 +92,15 @@ class ProfileHeaderWidget extends StatelessWidget {
                               color: Colors.white.withOpacity(0.9),
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              profile.nationality,
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 14,
+                            Flexible(
+                              child: Text(
+                                profile.nationality,
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -103,11 +110,15 @@ class ProfileHeaderWidget extends StatelessWidget {
                               color: Colors.white.withOpacity(0.9),
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              '${profile.age} years',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 14,
+                            Flexible(
+                              child: Text(
+                                '${profile.age} years',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -138,16 +149,6 @@ class ProfileHeaderWidget extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // Edit Button
-                  if (onEditPressed != null)
-                    IconButton(
-                      onPressed: onEditPressed,
-                      icon: const Icon(Icons.edit, color: Colors.white),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                      ),
-                    ),
                 ],
               ),
               const SizedBox(height: 24),

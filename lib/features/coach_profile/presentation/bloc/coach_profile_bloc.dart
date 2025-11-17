@@ -1,13 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:injectable/injectable.dart';
-import '../../domain/entities/team.dart';
+import '../../domain/entities/coach_team.dart';
 import '../../domain/usecases/get_coach_profile.dart';
 import '../../domain/usecases/create_coach_profile.dart' as create_usecase;
 import '../../domain/usecases/update_coach_profile.dart' as update_usecase;
 import '../../domain/usecases/get_coach_teams.dart';
 import '../../domain/usecases/create_team.dart' as create_team_usecase;
 import '../../domain/usecases/manage_team_players.dart' as manage_usecase;
-import '../../domain/usecases/manage_team_players.dart' show ManageTeamPlayerParams;
 import 'coach_profile_event.dart';
 import 'coach_profile_state.dart';
 

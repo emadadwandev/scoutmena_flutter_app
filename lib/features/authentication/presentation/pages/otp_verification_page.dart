@@ -73,7 +73,10 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
 
   void _onResendCode() {
     context.read<AuthBloc>().add(
-          PhoneAuthRequested(phoneNumber: widget.phoneNumber),
+          BrevoOtpSendRequested(
+            phoneNumber: widget.phoneNumber,
+            method: 'sms',
+          ),
         );
     _startTimer();
   }
@@ -84,15 +87,26 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
       if (AppConstants.bypassOTPVerification) {
         // Check if the entered OTP matches the test OTP
         if (_otpController.text == AppConstants.testOTP) {
-          // Go directly to registration since this is a new user in testing
-          Navigator.pushReplacementNamed(
-            context,
-            AppRoutes.registration,
-            arguments: {
-              'firebaseUid': 'test-user-${DateTime.now().millisecondsSinceEpoch}',
-              'phoneNumber': widget.phoneNumber,
-            },
-          );
+          // Navigate based on mode
+          if (widget.mode == 'register') {
+            // Go to registration form
+            Navigator.pushReplacementNamed(
+              context,
+              AppRoutes.registration,
+              arguments: {
+                'verificationId': widget.verificationId,
+                'phoneNumber': widget.phoneNumber,
+              },
+            );
+          } else {
+            // Try to login - will handle registration requirement if needed
+            context.read<AuthBloc>().add(
+                  BrevoOtpVerificationRequested(
+                    verificationId: widget.verificationId,
+                    otp: _otpController.text,
+                  ),
+                );
+          }
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -102,9 +116,9 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
           );
         }
       } else {
-        // Normal flow - verify OTP via Firebase
+        // Normal flow - verify OTP via Brevo
         context.read<AuthBloc>().add(
-              OTPVerificationRequested(
+              BrevoOtpVerificationRequested(
                 verificationId: widget.verificationId,
                 otp: _otpController.text,
               ),
@@ -126,9 +140,31 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
         ),
         body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
-            if (state is AuthRegistrationRequired) {
+            if (state is BrevoOtpVerified) {
+              // OTP verified successfully - now handle login/registration
+              if (widget.mode == 'register') {
+                // User is registering - go to registration form
+                Navigator.pushReplacementNamed(
+                  context,
+                  AppRoutes.registration,
+                  arguments: {
+                    'verificationId': widget.verificationId,
+                    'phoneNumber': widget.phoneNumber,
+                  },
+                );
+              } else {
+                // User is logging in - attempt login
+                // This will be handled by the next event (BrevoLoginRequested)
+                // For now, show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('OTP verified successfully'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            } else if (state is AuthRegistrationRequired) {
               // New user needs to register - go directly to registration form
-              // User will select role and enter details in the registration form
               Navigator.pushReplacementNamed(
                 context,
                 AppRoutes.registration,
@@ -161,7 +197,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   backgroundColor: Colors.red,
                 ),
               );
-            } else if (state is PhoneAuthCodeSent) {
+            } else if (state is BrevoOtpResent || state is PhoneAuthCodeSent) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(l10n.otpResent),

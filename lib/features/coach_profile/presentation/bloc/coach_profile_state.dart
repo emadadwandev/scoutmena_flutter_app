@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../domain/entities/coach_profile.dart';
-import '../../domain/entities/team.dart';
+import '../../domain/entities/coach_team.dart';
 
 abstract class CoachProfileState extends Equatable {
   const CoachProfileState();

@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/error/failures.dart';
 import '../entities/coach_profile.dart';
-import '../entities/team.dart';
+import '../entities/coach_team.dart';
 
 /// Coach repository interface
 abstract class CoachRepository {

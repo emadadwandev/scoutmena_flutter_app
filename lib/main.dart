@@ -24,6 +24,14 @@ import 'features/player_profile/presentation/pages/photo_gallery_management_page
 import 'features/player_profile/presentation/pages/video_gallery_management_page.dart';
 import 'features/player_profile/presentation/pages/statistics_management_page.dart';
 import 'features/player_profile/presentation/pages/profile_analytics_page.dart';
+import 'features/player_profile/presentation/pages/photo_viewer_page.dart';
+import 'features/player_profile/presentation/pages/video_player_page.dart';
+import 'features/player_profile/domain/entities/player_photo.dart';
+import 'features/player_profile/domain/entities/player_video.dart';
+import 'features/settings/presentation/pages/faq_page.dart';
+import 'features/settings/presentation/pages/tutorials_page.dart';
+import 'features/settings/presentation/pages/blocked_users_page.dart';
+import 'features/messaging/presentation/pages/messaging_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -79,37 +87,40 @@ class _ScoutMenaAppState extends State<ScoutMenaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'ScoutMena',
-      debugShowCheckedModeBanner: false,
+    return BlocProvider(
+      create: (_) => getIt<AuthBloc>(),
+      child: MaterialApp(
+        title: 'ScoutMena',
+        debugShowCheckedModeBanner: false,
 
-      // Localization
-      locale: _locale,
-      localizationsDelegates: const [
-        AppLocalizations.delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('en'), // English
-        Locale('ar'), // Arabic
-      ],
+        // Localization
+        locale: _locale,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'), // English
+          Locale('ar'), // Arabic
+        ],
 
-      // Theme
-      theme: AppTheme.getTheme(
-        isDark: false,
-        languageCode: _locale.languageCode,
+        // Theme
+        theme: AppTheme.getTheme(
+          isDark: false,
+          languageCode: _locale.languageCode,
+        ),
+        darkTheme: AppTheme.getTheme(
+          isDark: true,
+          languageCode: _locale.languageCode,
+        ),
+        themeMode: _themeMode,
+
+        // Routing
+        initialRoute: AppRoutes.splash,
+        onGenerateRoute: _generateRoute,
       ),
-      darkTheme: AppTheme.getTheme(
-        isDark: true,
-        languageCode: _locale.languageCode,
-      ),
-      themeMode: _themeMode,
-
-      // Routing
-      initialRoute: AppRoutes.splash,
-      onGenerateRoute: _generateRoute,
     );
   }
 
@@ -127,11 +138,8 @@ class _ScoutMenaAppState extends State<ScoutMenaApp> {
       case AppRoutes.phoneAuth:
         final args = settings.arguments as Map<String, dynamic>?;
         return MaterialPageRoute(
-          builder: (_) => BlocProvider(
-            create: (_) => getIt<AuthBloc>(),
-            child: PhoneAuthPage(
-              mode: args?['mode'] as String? ?? 'login',
-            ),
+          builder: (_) => PhoneAuthPage(
+            mode: args?['mode'] as String? ?? 'login',
           ),
         );
 
@@ -201,6 +209,22 @@ class _ScoutMenaAppState extends State<ScoutMenaApp> {
           builder: (_) => const ProfileAnalyticsPage(playerId: 'current'),
         );
 
+      case AppRoutes.photoViewer:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => PhotoViewerPage(
+            photo: args['photo'] as PlayerPhoto,
+            photoGallery: args['photoGallery'] as List<PlayerPhoto>?,
+            initialIndex: args['initialIndex'] as int?,
+          ),
+        );
+
+      case AppRoutes.videoPlayer:
+        final video = settings.arguments as PlayerVideo;
+        return MaterialPageRoute(
+          builder: (_) => VideoPlayerPage(video: video),
+        );
+
       case AppRoutes.playerDashboard:
         return MaterialPageRoute(
           builder: (_) => const PlayerDashboardPage(),
@@ -213,6 +237,30 @@ class _ScoutMenaAppState extends State<ScoutMenaApp> {
             body: const Center(
               child: Text('Scout Dashboard - Coming in Phase 4'),
             ),
+          ),
+        );
+
+      case AppRoutes.faq:
+        return MaterialPageRoute(
+          builder: (_) => const FAQPage(),
+        );
+
+      case AppRoutes.tutorials:
+        return MaterialPageRoute(
+          builder: (_) => const TutorialsPage(),
+        );
+
+      case AppRoutes.blockedUsers:
+        return MaterialPageRoute(
+          builder: (_) => const BlockedUsersPage(),
+        );
+
+      case AppRoutes.messaging:
+        final args = settings.arguments as Map<String, dynamic>?;
+        return MaterialPageRoute(
+          builder: (_) => MessagingPage(
+            userId: args?['userId'] as String?,
+            userName: args?['userName'] as String?,
           ),
         );
 

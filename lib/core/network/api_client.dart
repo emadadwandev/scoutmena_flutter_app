@@ -41,10 +41,10 @@ class ApiClient {
               );
               
               if (authToken != null && authToken.isNotEmpty) {
-                print('🔑 Using Sanctum token (testing mode): ${authToken.substring(0, 20)}...');
+              //  print('🔑 Using Sanctum token (testing mode): ${authToken.substring(0, 20)}...');
                 options.headers['Authorization'] = 'Bearer $authToken';
               } else {
-                print('🔑 Using mock Firebase token (testing mode)');
+       //         print('🔑 Using mock Firebase token (testing mode)');
                 options.headers['Authorization'] = 'Bearer ${AppConstants.mockFirebaseToken}';
               }
               return handler.next(options);
@@ -56,7 +56,7 @@ class ApiClient {
             );
             
             if (authToken != null && authToken.isNotEmpty) {
-              print('🔑 Using Sanctum auth token: ${authToken.substring(0, 20)}...');
+           //   print('🔑 Using Sanctum auth token: ${authToken.substring(0, 20)}...');
               options.headers['Authorization'] = 'Bearer $authToken';
               return handler.next(options);
             }
@@ -67,10 +67,10 @@ class ApiClient {
             );
 
             if (firebaseToken != null && firebaseToken.isNotEmpty) {
-              print('🔑 Using Firebase token: ${firebaseToken.substring(0, 20)}...');
+           //   print('🔑 Using Firebase token: ${firebaseToken.substring(0, 20)}...');
               options.headers['Authorization'] = 'Bearer $firebaseToken';
             } else {
-              print('⚠️ No auth token found in storage!');
+           //   print('⚠️ No auth token found in storage!');
             }
 
             return handler.next(options);
@@ -141,10 +141,10 @@ class ApiClient {
 
   /// Clear all stored tokens (auth + Firebase)
   Future<void> clearAllTokens() async {
-    print('🗑️ Clearing all stored tokens...');
+   // print('🗑️ Clearing all stored tokens...');
     await _secureStorage.delete(key: AppConstants.keyAuthToken);
     await _secureStorage.delete(key: AppConstants.keyFirebaseToken);
-    print('✅ All tokens cleared');
+//    print('✅ All tokens cleared');
   }
 
   /// Refresh Firebase authentication token

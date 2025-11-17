@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../domain/entities/team.dart';
+import '../../domain/entities/coach_team.dart';
 import '../bloc/coach_profile_bloc.dart';
 import '../bloc/coach_profile_event.dart';
 import '../bloc/coach_profile_state.dart';

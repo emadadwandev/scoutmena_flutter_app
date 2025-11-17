@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/player_profile.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Profile information card displaying contact and additional details
 class ProfileInfoCard extends StatelessWidget {
@@ -13,6 +12,8 @@ class ProfileInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Card(
       margin: const EdgeInsets.all(16),
       elevation: 2,
@@ -23,7 +24,7 @@ class ProfileInfoCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: AppColors.playerPrimary),
+                Icon(Icons.info_outline, color: theme.colorScheme.primary),
                 const SizedBox(width: 8),
                 Text(
                   'Profile Information',
@@ -149,11 +150,12 @@ class ProfileInfoCard extends StatelessWidget {
   }
 
   Widget _buildSectionTitle(BuildContext context, String title) {
+    final theme = Theme.of(context);
     return Text(
       title,
       style: Theme.of(context).textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: AppColors.playerPrimary,
+            color: theme.colorScheme.primary,
           ),
     );
   }

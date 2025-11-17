@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/player_photo.dart';
-import '../../../../core/theme/app_colors.dart';
 
 /// Photo gallery widget displaying player photos in a grid
 class PhotoGalleryWidget extends StatelessWidget {
@@ -17,6 +16,8 @@ class PhotoGalleryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Card(
       margin: const EdgeInsets.all(16),
       elevation: 2,
@@ -30,7 +31,7 @@ class PhotoGalleryWidget extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Icon(Icons.photo_library, color: AppColors.playerPrimary),
+                    Icon(Icons.photo_library, color: theme.colorScheme.primary),
                     const SizedBox(width: 8),
                     Text(
                       'Photo Gallery',
@@ -115,7 +116,7 @@ class PhotoGalleryWidget extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.playerPrimary,
+                  color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: const Icon(

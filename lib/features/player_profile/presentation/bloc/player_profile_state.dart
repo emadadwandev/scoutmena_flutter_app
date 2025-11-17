@@ -75,13 +75,38 @@ class StatsUpdating extends PlayerProfileState {
 // ============================================================================
 
 /// State when player profile is loaded successfully
+/// This state holds ALL profile-related data (profile, photos, videos, stats)
+/// to prevent state replacement issues when loading secondary data
 class PlayerProfileLoaded extends PlayerProfileState {
   final PlayerProfile profile;
+  final List<PlayerPhoto>? photos;
+  final List<PlayerVideo>? videos;
+  final List<PlayerStat>? stats;
 
-  const PlayerProfileLoaded({required this.profile});
+  const PlayerProfileLoaded({
+    required this.profile,
+    this.photos,
+    this.videos,
+    this.stats,
+  });
+
+  /// Create a copy with updated data
+  PlayerProfileLoaded copyWith({
+    PlayerProfile? profile,
+    List<PlayerPhoto>? photos,
+    List<PlayerVideo>? videos,
+    List<PlayerStat>? stats,
+  }) {
+    return PlayerProfileLoaded(
+      profile: profile ?? this.profile,
+      photos: photos ?? this.photos,
+      videos: videos ?? this.videos,
+      stats: stats ?? this.stats,
+    );
+  }
 
   @override
-  List<Object?> get props => [profile];
+  List<Object?> get props => [profile, photos, videos, stats];
 }
 
 /// State when player profile is created successfully
@@ -119,6 +144,7 @@ class ProfilePhotoUploaded extends PlayerProfileState {
 // ============================================================================
 
 /// State when player photos are loaded successfully
+/// DEPRECATED: Use PlayerProfileLoaded.copyWith(photos: ...) instead
 class PlayerPhotosLoaded extends PlayerProfileState {
   final List<PlayerPhoto> photos;
 
@@ -161,6 +187,7 @@ class PhotoDeletedFromGallery extends PlayerProfileState {
 // ============================================================================
 
 /// State when player videos are loaded successfully
+/// DEPRECATED: Use PlayerProfileLoaded.copyWith(videos: ...) instead
 class PlayerVideosLoaded extends PlayerProfileState {
   final List<PlayerVideo> videos;
 
@@ -203,6 +230,7 @@ class VideoDeletedFromGallery extends PlayerProfileState {
 // ============================================================================
 
 /// State when player statistics are loaded successfully
+/// DEPRECATED: Use PlayerProfileLoaded.copyWith(stats: ...) instead
 class PlayerStatsLoaded extends PlayerProfileState {
   final List<PlayerStat> stats;
 

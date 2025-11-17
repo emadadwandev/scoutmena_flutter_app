@@ -81,3 +81,46 @@ class AuthError extends AuthState {
   @override
   List<Object?> get props => [message];
 }
+
+// ===== BREVO OTP STATES =====
+
+class BrevoOtpSent extends AuthState {
+  final String verificationId;
+  final String phoneNumber;
+  final String method;
+
+  const BrevoOtpSent({
+    required this.verificationId,
+    required this.phoneNumber,
+    required this.method,
+  });
+
+  @override
+  List<Object?> get props => [verificationId, phoneNumber, method];
+}
+
+class BrevoOtpVerified extends AuthState {
+  final String verificationId;
+  final String phoneNumber;
+
+  const BrevoOtpVerified({
+    required this.verificationId,
+    required this.phoneNumber,
+  });
+
+  @override
+  List<Object?> get props => [verificationId, phoneNumber];
+}
+
+class BrevoOtpResent extends AuthState {
+  final String verificationId;
+  final String phoneNumber;
+
+  const BrevoOtpResent({
+    required this.verificationId,
+    required this.phoneNumber,
+  });
+
+  @override
+  List<Object?> get props => [verificationId, phoneNumber];
+}

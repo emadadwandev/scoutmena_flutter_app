@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../core/navigation/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 
 /// Contact support form for users to submit inquiries
@@ -112,10 +113,7 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
                 label: 'FAQ',
                 color: Colors.blue,
                 onTap: () {
-                  // TODO: Navigate to FAQ
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('FAQ coming soon')),
-                  );
+                  Navigator.pushNamed(context, AppRoutes.faq);
                 },
               ),
             ),
@@ -126,10 +124,7 @@ class _ContactSupportPageState extends State<ContactSupportPage> {
                 label: 'Tutorials',
                 color: Colors.orange,
                 onTap: () {
-                  // TODO: Navigate to tutorials
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Tutorials coming soon')),
-                  );
+                  Navigator.pushNamed(context, AppRoutes.tutorials);
                 },
               ),
             ),

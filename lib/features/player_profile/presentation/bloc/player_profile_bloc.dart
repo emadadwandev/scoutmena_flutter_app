@@ -92,6 +92,7 @@ class PlayerProfileBloc extends Bloc<PlayerProfileEvent, PlayerProfileState> {
     LoadPlayerProfile event,
     Emitter<PlayerProfileState> emit,
   ) async {
+    print('DEBUG BLoC: Loading profile for ${event.playerId}');
     emit(const PlayerProfileLoading());
 
     final result = await _getPlayerProfile(
@@ -99,8 +100,14 @@ class PlayerProfileBloc extends Bloc<PlayerProfileEvent, PlayerProfileState> {
     );
 
     result.fold(
-      (failure) => emit(PlayerProfileError(message: failure.message)),
-      (profile) => emit(PlayerProfileLoaded(profile: profile)),
+      (failure) {
+        print('DEBUG BLoC: Profile load FAILED: ${failure.message}');
+        emit(PlayerProfileError(message: failure.message));
+      },
+      (profile) {
+        print('DEBUG BLoC: Profile loaded successfully, emitting PlayerProfileLoaded');
+        emit(PlayerProfileLoaded(profile: profile));
+      },
     );
   }
 
@@ -166,17 +173,34 @@ class PlayerProfileBloc extends Bloc<PlayerProfileEvent, PlayerProfileState> {
     LoadPlayerPhotos event,
     Emitter<PlayerProfileState> emit,
   ) async {
-    emit(const PlayerProfileLoading());
-
+    print('DEBUG BLoC: Loading photos');
     final result = await _getPlayerPhotos(
       GetPlayerPhotosParams(playerId: event.playerId),
     );
 
     result.fold(
-      (failure) => emit(PlayerProfileError(message: failure.message)),
+      (failure) {
+        print('DEBUG BLoC: Photos load warning: ${failure.message}');
+        // Don't emit error state for missing photos - just cache empty list
+        _cachedPhotos = [];
+        // If current state is PlayerProfileLoaded, update it with empty photos
+        if (state is PlayerProfileLoaded) {
+          final currentState = state as PlayerProfileLoaded;
+          emit(currentState.copyWith(photos: []));
+        }
+        // Otherwise, just log the warning and continue
+      },
       (photos) {
+        print('DEBUG BLoC: ${photos.length} photos loaded, updating PlayerProfileLoaded state');
         _cachedPhotos = photos;
-        emit(PlayerPhotosLoaded(photos: photos));
+        // If current state is PlayerProfileLoaded, update it with photos
+        if (state is PlayerProfileLoaded) {
+          final currentState = state as PlayerProfileLoaded;
+          emit(currentState.copyWith(photos: photos));
+        } else {
+          // Fallback: emit standalone photos loaded state
+          emit(PlayerPhotosLoaded(photos: photos));
+        }
       },
     );
   }
@@ -238,17 +262,34 @@ class PlayerProfileBloc extends Bloc<PlayerProfileEvent, PlayerProfileState> {
     LoadPlayerVideos event,
     Emitter<PlayerProfileState> emit,
   ) async {
-    emit(const PlayerProfileLoading());
-
+    print('DEBUG BLoC: Loading videos');
     final result = await _getPlayerVideos(
       GetPlayerVideosParams(playerId: event.playerId),
     );
 
     result.fold(
-      (failure) => emit(PlayerProfileError(message: failure.message)),
+      (failure) {
+        print('DEBUG BLoC: Videos load warning: ${failure.message}');
+        // Don't emit error state for missing videos - just cache empty list
+        _cachedVideos = [];
+        // If current state is PlayerProfileLoaded, update it with empty videos
+        if (state is PlayerProfileLoaded) {
+          final currentState = state as PlayerProfileLoaded;
+          emit(currentState.copyWith(videos: []));
+        }
+        // Otherwise, just log the warning and continue
+      },
       (videos) {
+        print('DEBUG BLoC: ${videos.length} videos loaded, updating PlayerProfileLoaded state');
         _cachedVideos = videos;
-        emit(PlayerVideosLoaded(videos: videos));
+        // If current state is PlayerProfileLoaded, update it with videos
+        if (state is PlayerProfileLoaded) {
+          final currentState = state as PlayerProfileLoaded;
+          emit(currentState.copyWith(videos: videos));
+        } else {
+          // Fallback: emit standalone videos loaded state
+          emit(PlayerVideosLoaded(videos: videos));
+        }
       },
     );
   }
@@ -312,17 +353,34 @@ class PlayerProfileBloc extends Bloc<PlayerProfileEvent, PlayerProfileState> {
     LoadPlayerStats event,
     Emitter<PlayerProfileState> emit,
   ) async {
-    emit(const PlayerProfileLoading());
-
+    print('DEBUG BLoC: Loading stats');
     final result = await _getPlayerStats(
       GetPlayerStatsParams(playerId: event.playerId),
     );
 
     result.fold(
-      (failure) => emit(PlayerProfileError(message: failure.message)),
+      (failure) {
+        print('DEBUG BLoC: Stats load warning: ${failure.message}');
+        // Don't emit error state for missing stats - just cache empty list
+        _cachedStats = [];
+        // If current state is PlayerProfileLoaded, update it with empty stats
+        if (state is PlayerProfileLoaded) {
+          final currentState = state as PlayerProfileLoaded;
+          emit(currentState.copyWith(stats: []));
+        }
+        // Otherwise, just log the warning and continue
+      },
       (stats) {
+        print('DEBUG BLoC: ${stats.length} stats loaded, updating PlayerProfileLoaded state');
         _cachedStats = stats;
-        emit(PlayerStatsLoaded(stats: stats));
+        // If current state is PlayerProfileLoaded, update it with stats
+        if (state is PlayerProfileLoaded) {
+          final currentState = state as PlayerProfileLoaded;
+          emit(currentState.copyWith(stats: stats));
+        } else {
+          // Fallback: emit standalone stats loaded state
+          emit(PlayerStatsLoaded(stats: stats));
+        }
       },
     );
   }

@@ -12,13 +12,15 @@ import '../widgets/role_selection_card.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class RegistrationPage extends StatefulWidget {
-  final String firebaseUid;
+  final String? firebaseUid; // Legacy Firebase UID (optional)
+  final String? verificationId; // Brevo OTP verification ID (optional)
   final String phoneNumber;
   final String? accountType; // Optional - can be selected in form
 
   const RegistrationPage({
     super.key,
-    required this.firebaseUid,
+    this.firebaseUid,
+    this.verificationId,
     required this.phoneNumber,
     this.accountType,
   });
@@ -577,12 +579,22 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                 userData['parent_relationship'] = _parentRelationship!;
                               }
 
-                              btnContext.read<AuthBloc>().add(
-                                    RegistrationRequested(
-                                      firebaseUid: widget.firebaseUid,
-                                      userData: userData,
-                                    ),
-                                  );
+                              // Use Brevo OTP if verificationId is provided, otherwise use Firebase
+                              if (widget.verificationId != null) {
+                                btnContext.read<AuthBloc>().add(
+                                      BrevoRegistrationRequested(
+                                        verificationId: widget.verificationId!,
+                                        userData: userData,
+                                      ),
+                                    );
+                              } else {
+                                btnContext.read<AuthBloc>().add(
+                                      RegistrationRequested(
+                                        firebaseUid: widget.firebaseUid!,
+                                        userData: userData,
+                                      ),
+                                    );
+                              }
                             }
                           },
                           isLoading: isLoading,
