@@ -264,6 +264,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     BrevoOtpVerificationRequested event,
     Emitter<AuthState> emit,
   ) async {
+    print('📱 Verifying OTP: ${event.verificationId}');
     emit(const AuthLoading());
 
     final result = await verifyBrevoOtp(
@@ -274,8 +275,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     );
 
     result.fold(
-      (failure) => emit(AuthError(message: failure.message)),
+      (failure) {
+        print('❌ OTP verification failed: ${failure.message}');
+        emit(AuthError(message: failure.message));
+      },
       (message) {
+        print('✅ OTP verified successfully, emitting BrevoOtpVerified state');
         // Extract phone number from the success message if available
         // The backend returns: "OTP verified successfully"
         emit(BrevoOtpVerified(
@@ -334,10 +339,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         // Check if this is a parental consent required failure
         if (failure is ParentalConsentRequiredFailure) {
           // Create a minimal user entity for the parental consent state
+          // Build name from provided fields; Brevo flow sends first/last name
+          final name = (event.userData['name'] as String?) ??
+              [
+                (event.userData['first_name'] as String?)?.trim() ?? '',
+                (event.userData['last_name'] as String?)?.trim() ?? ''
+              ].where((p) => p.isNotEmpty).join(' ');
+
           final minorUser = UserEntity(
             id: 'pending',
             firebaseUid: '', // Not applicable for Brevo OTP
-            name: event.userData['name'] as String,
+            name: name,
             email: event.userData['email'] as String,
             phone: event.userData['phone'] as String?,
             accountType: event.userData['account_type'] as String,
@@ -368,6 +380,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     BrevoLoginRequested event,
     Emitter<AuthState> emit,
   ) async {
+    print('🔐 Attempting login with OTP: ${event.verificationId}, accountType: ${event.accountType}');
     emit(const AuthLoading());
 
     final result = await loginWithBrevoOtp(
@@ -379,18 +392,23 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     result.fold(
       (failure) {
+        print('❌ Login failed: ${failure.message}');
+        print('🔍 Failure type: ${failure.runtimeType}');
+        print('🔍 Is UserNotFoundFailure: ${failure is UserNotFoundFailure}');
+        if (failure is UserNotFoundFailure) {
+          print('🔍 requiresRegistration: ${failure.requiresRegistration}');
+        }
         // Check if user needs to register
         if (failure is UserNotFoundFailure && failure.requiresRegistration) {
-          // User needs to register first
-          emit(BrevoOtpVerified(
-            verificationId: event.verificationId,
-            phoneNumber: '', // Will be populated from context
-          ));
+          print('📋 User not found - registration required');
+          // User not found - treat verification ID as firebaseUid for registration flow
+          emit(AuthRegistrationRequired(firebaseUid: event.verificationId));
         } else {
           emit(AuthError(message: failure.message));
         }
       },
       (user) {
+        print('🎉 Login successful! User: ${user.id}, Type: ${user.accountType}');
         emit(AuthAuthenticated(user: user));
       },
     );

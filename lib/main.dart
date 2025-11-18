@@ -17,9 +17,11 @@ import 'features/authentication/presentation/pages/otp_verification_page.dart';
 import 'features/authentication/presentation/pages/role_selection_page.dart';
 import 'features/authentication/presentation/pages/registration_page.dart';
 import 'features/authentication/presentation/bloc/auth_bloc.dart';
+import 'features/authentication/presentation/bloc/auth_event.dart';
 import 'features/player_profile/presentation/pages/player_dashboard_page.dart';
 import 'features/player_profile/presentation/pages/player_profile_setup_page.dart';
 import 'features/player_profile/presentation/pages/player_profile_view_page.dart';
+import 'features/player_profile/presentation/pages/player_profile_edit_page.dart';
 import 'features/player_profile/presentation/pages/photo_gallery_management_page.dart';
 import 'features/player_profile/presentation/pages/video_gallery_management_page.dart';
 import 'features/player_profile/presentation/pages/statistics_management_page.dart';
@@ -28,6 +30,15 @@ import 'features/player_profile/presentation/pages/photo_viewer_page.dart';
 import 'features/player_profile/presentation/pages/video_player_page.dart';
 import 'features/player_profile/domain/entities/player_photo.dart';
 import 'features/player_profile/domain/entities/player_video.dart';
+import 'features/player_profile/presentation/bloc/player_profile_bloc.dart';
+import 'features/player_profile/presentation/bloc/player_profile_state.dart';
+import 'features/player_profile/presentation/bloc/player_profile_event.dart';
+import 'features/authentication/presentation/bloc/auth_state.dart';
+import 'features/scout_profile/presentation/pages/scout_dashboard_page.dart';
+import 'features/scout_profile/presentation/bloc/scout_profile_bloc.dart';
+import 'features/scout_profile/presentation/bloc/saved_searches_bloc.dart';
+import 'features/coach_profile/presentation/pages/coach_dashboard_page.dart';
+import 'features/coach_profile/presentation/bloc/coach_profile_bloc.dart';
 import 'features/settings/presentation/pages/faq_page.dart';
 import 'features/settings/presentation/pages/tutorials_page.dart';
 import 'features/settings/presentation/pages/blocked_users_page.dart';
@@ -165,7 +176,9 @@ class _ScoutMenaAppState extends State<ScoutMenaApp> {
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           builder: (_) => RegistrationPage(
-            firebaseUid: args['firebaseUid'] as String,
+            // Support both legacy Firebase and new Brevo OTP registration flows
+            firebaseUid: args['firebaseUid'] as String?,
+            verificationId: args['verificationId'] as String?,
             phoneNumber: args['phoneNumber'] as String,
             accountType: args['accountType'] as String?, // Optional now
           ),
@@ -183,10 +196,66 @@ class _ScoutMenaAppState extends State<ScoutMenaApp> {
         );
 
       case AppRoutes.playerProfileEdit:
-        // TODO: Fetch profile in the page or pass via arguments
-        // For now, redirect to profile setup if no profile exists
+        // Get userId from AuthBloc - this route is accessed from within the app
+        final userId = context.read<AuthBloc>().state is AuthAuthenticated 
+          ? (context.read<AuthBloc>().state as AuthAuthenticated).user.id 
+          : null;
+
+        if (userId == null) {
+          return MaterialPageRoute(
+            builder: (_) => Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Please login to edit your profile'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pushReplacementNamed(
+                        context,
+                        AppRoutes.login,
+                      ),
+                      child: const Text('Go to Login'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        // Fetch profile and display edit page
         return MaterialPageRoute(
-          builder: (_) => const PlayerProfileSetupPage(),
+          builder: (_) => BlocProvider.value(
+            value: getIt<PlayerProfileBloc>()
+              ..add(LoadPlayerProfile(playerId: userId)),
+            child: BlocBuilder<PlayerProfileBloc, PlayerProfileState>(
+              builder: (context, profileState) {
+                if (profileState is PlayerProfileLoading) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                } else if (profileState is PlayerProfileLoaded) {
+                  return PlayerProfileEditPage(profile: profileState.profile);
+                } else if (profileState is PlayerProfileError) {
+                  // Profile doesn't exist, redirect to profile setup
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    Navigator.pushReplacementNamed(
+                      context,
+                      AppRoutes.playerProfileSetup,
+                    );
+                  });
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                // Initial state or unknown state
+                return const Scaffold(
+                  body: Center(child: CircularProgressIndicator()),
+                );
+              },
+            ),
+          ),
         );
 
       case AppRoutes.photoGallery:
@@ -231,11 +300,122 @@ class _ScoutMenaAppState extends State<ScoutMenaApp> {
         );
 
       case AppRoutes.scoutDashboard:
+        // Get userId from arguments or fall back to reading from AuthBloc
+        final userId = settings.arguments as String? ?? 
+          (context.read<AuthBloc>().state is AuthAuthenticated 
+            ? (context.read<AuthBloc>().state as AuthAuthenticated).user.id 
+            : null);
+
+        if (userId == null) {
+          return MaterialPageRoute(
+            builder: (_) => Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Please login to access scout dashboard'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pushReplacementNamed(
+                        context,
+                        AppRoutes.login,
+                      ),
+                      child: const Text('Go to Login'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return MaterialPageRoute(
+          builder: (_) => MultiBlocProvider(
+            providers: [
+              BlocProvider<ScoutProfileBloc>(
+                create: (_) => getIt<ScoutProfileBloc>(),
+              ),
+              BlocProvider<SavedSearchesBloc>(
+                create: (_) => getIt<SavedSearchesBloc>(),
+              ),
+            ],
+            child: ScoutDashboardPage(scoutId: userId),
+          ),
+        );
+
+      case AppRoutes.coachDashboard:
+        // Get userId from arguments or fall back to reading from AuthBloc
+        final userId = settings.arguments as String? ?? 
+          (context.read<AuthBloc>().state is AuthAuthenticated 
+            ? (context.read<AuthBloc>().state as AuthAuthenticated).user.id 
+            : null);
+
+        if (userId == null) {
+          return MaterialPageRoute(
+            builder: (_) => Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Please login to access coach dashboard'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pushReplacementNamed(
+                        context,
+                        AppRoutes.login,
+                      ),
+                      child: const Text('Go to Login'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return MaterialPageRoute(
+          builder: (_) => BlocProvider<CoachProfileBloc>(
+            create: (_) => getIt<CoachProfileBloc>(),
+            child: CoachDashboardPage(coachId: userId),
+          ),
+        );
+
+      case AppRoutes.parentDashboard:
         return MaterialPageRoute(
           builder: (_) => Scaffold(
-            appBar: AppBar(title: const Text('Scout Dashboard')),
+            appBar: AppBar(
+              title: const Text('Parent Dashboard'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.logout),
+                  onPressed: () {
+                    context.read<AuthBloc>().add(const LogoutRequested());
+                    Navigator.of(context).pushNamedAndRemoveUntil(
+                      AppRoutes.phoneAuth,
+                      (route) => false,
+                    );
+                  },
+                ),
+              ],
+            ),
             body: const Center(
-              child: Text('Scout Dashboard - Coming in Phase 4'),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.family_restroom,
+                    size: 80,
+                    color: Colors.green,
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Parent Dashboard',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 10),
+                  Text('Coming in Phase 4'),
+                ],
+              ),
             ),
           ),
         );

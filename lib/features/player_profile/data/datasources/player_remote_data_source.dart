@@ -112,35 +112,78 @@ class PlayerRemoteDataSourceImpl implements PlayerRemoteDataSource {
     final physical = apiData['physical'] as Map<String, dynamic>?;
     final football = apiData['football'] as Map<String, dynamic>?;
     
-    // Parse positions - convert primary_position to array format
+    // Parse positions - convert primary_position to array format with abbreviations
     final primaryPos = football?['primary_position'] as String?;
-    final secondaryPos = football?['secondary_positions'] as String?;
+    final secondaryPosData = football?['secondary_positions'];
     List<String> positions = [];
+    
     if (primaryPos != null && primaryPos.isNotEmpty) {
-      positions.add(primaryPos);
-    }
-    if (secondaryPos != null && secondaryPos.isNotEmpty) {
-      // Secondary positions might be comma-separated or empty string
-      final secondary = secondaryPos.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty);
-      positions.addAll(secondary);
-    }
-    if (positions.isEmpty) {
-      positions.add('striker'); // Default fallback
+      positions.add(_convertBackendPositionToFlutter(primaryPos));
     }
     
-    // Calculate approximate dateOfBirth from age
+    // Handle secondary positions - could be string, array, or null
+    if (secondaryPosData != null) {
+      if (secondaryPosData is String && secondaryPosData.isNotEmpty) {
+        final secondary = secondaryPosData.split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .map((s) => _convertBackendPositionToFlutter(s));
+        positions.addAll(secondary);
+      } else if (secondaryPosData is List) {
+        final secondary = secondaryPosData
+            .map((s) => _convertBackendPositionToFlutter(s.toString()))
+            .where((s) => s.isNotEmpty);
+        positions.addAll(secondary);
+      }
+    }
+    
+    if (positions.isEmpty) {
+      positions.add('ST'); // Default fallback
+    }
+    
+    // Calculate approximate dateOfBirth from age or use career start date
     final age = apiData['age'] as int?;
-    final dateOfBirth = age != null
-        ? DateTime(DateTime.now().year - age, 1, 1).toIso8601String()
-        : DateTime(2005, 1, 1).toIso8601String();
+    final careerStartDateStr = football?['career_start_date'] as String?;
+    
+    String dateOfBirth;
+    if (age != null) {
+      dateOfBirth = DateTime(DateTime.now().year - age, 6, 15).toIso8601String();
+    } else if (careerStartDateStr != null && careerStartDateStr.isNotEmpty) {
+      final careerStart = DateTime.parse(careerStartDateStr);
+      // Assume started playing at age 10
+      dateOfBirth = DateTime(careerStart.year - 10, 6, 15).toIso8601String();
+    } else {
+      dateOfBirth = DateTime(2005, 6, 15).toIso8601String();
+    }
     
     // Map preferred_foot to dominantFoot
     String dominantFoot = physical?['preferred_foot'] as String? ?? 'right';
     
+    // Extract social links - handle both empty strings and null
+    final socialLinksRaw = apiData['social_links'];
+    final socialLinks = (socialLinksRaw is Map<String, dynamic>) 
+        ? socialLinksRaw 
+        : <String, dynamic>{};
+    
+    // Extract contact info - handle both empty strings and null
+    final contactRaw = apiData['contact'];
+    final contact = (contactRaw is Map<String, dynamic>) 
+        ? contactRaw 
+        : <String, dynamic>{};
+    
+    // Calculate years playing from career start date or age
+    int yearsPlaying = 5;
+    if (careerStartDateStr != null && careerStartDateStr.isNotEmpty) {
+      final careerStart = DateTime.parse(careerStartDateStr);
+      yearsPlaying = DateTime.now().difference(careerStart).inDays ~/ 365;
+    } else if (age != null && age > 10) {
+      yearsPlaying = age - 10;
+    }
+    
     return {
       'id': apiData['id'],
       'userId': apiData['id'], // Using profile ID as userId for now
-      'fullName': apiData['full_name'] ?? '',
+      'fullName': apiData['full_name'] ?? apiData['name'] ?? '',
       'dateOfBirth': dateOfBirth,
       'nationality': location?['nationality'] ?? location?['country'] ?? 'Unknown',
       'height': (physical?['height_cm'] as num?)?.toDouble() ?? 175.0,
@@ -149,11 +192,11 @@ class PlayerRemoteDataSourceImpl implements PlayerRemoteDataSource {
       'currentClub': football?['current_club'] ?? '',
       'positions': positions,
       'jerseyNumber': football?['jersey_number'],
-      'yearsPlaying': age != null && age > 10 ? age - 10 : 5,
-      'email': null,
-      'phoneNumber': null,
-      'instagramHandle': null,
-      'twitterHandle': null,
+      'yearsPlaying': yearsPlaying,
+      'email': contact['email'],
+      'phoneNumber': contact['phone'],
+      'instagramHandle': socialLinks['instagram'],
+      'twitterHandle': socialLinks['twitter'],
       'profilePhotoUrl': null, // Will be populated from photos
       'isMinor': apiData['is_minor'] ?? false,
       'parentName': null,
@@ -168,6 +211,25 @@ class PlayerRemoteDataSourceImpl implements PlayerRemoteDataSource {
     };
   }
 
+  /// Convert backend position format to Flutter abbreviation
+  String _convertBackendPositionToFlutter(String position) {
+    final positionMap = {
+      'goalkeeper': 'GK',
+      'center_back': 'CB',
+      'right_back': 'RB',
+      'left_back': 'LB',
+      'defensive_midfielder': 'CDM',
+      'central_midfielder': 'CM',
+      'attacking_midfielder': 'CAM',
+      'right_winger': 'RW',
+      'left_winger': 'LW',
+      'striker': 'ST',
+      'second_striker': 'CF',
+    };
+    
+    return positionMap[position.toLowerCase()] ?? 'ST';
+  }
+
   @override
   Future<PlayerProfileModel> createPlayerProfile(
       Map<String, dynamic> profileData) async {
@@ -176,7 +238,8 @@ class PlayerRemoteDataSourceImpl implements PlayerRemoteDataSource {
         '/player/profile',
         data: profileData,
       );
-      return PlayerProfileModel.fromJson(response.data['data']);
+      final adaptedData = _adaptApiResponseToModel(response.data['data']);
+      return PlayerProfileModel.fromJson(adaptedData);
     } catch (e) {
       throw _handleError(e);
     }
@@ -192,7 +255,8 @@ class PlayerRemoteDataSourceImpl implements PlayerRemoteDataSource {
         '/player/profile/$playerId',
         data: profileData,
       );
-      return PlayerProfileModel.fromJson(response.data['data']);
+      final adaptedData = _adaptApiResponseToModel(response.data['data']);
+      return PlayerProfileModel.fromJson(adaptedData);
     } catch (e) {
       throw _handleError(e);
     }

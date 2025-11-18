@@ -33,6 +33,11 @@ class AppRoutes {
   static const String playerDetail = '/scout/player-detail';
   static const String savedSearches = '/scout/saved-searches';
 
+  // Coach Routes
+  static const String coachDashboard = '/coach/dashboard';
+  static const String coachProfile = '/coach/profile';
+  static const String coachProfileSetup = '/coach/profile-setup';
+
   // Parent Routes
   static const String parentDashboard = '/parent/dashboard';
   static const String parentConsent = '/parent/consent';

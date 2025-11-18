@@ -42,7 +42,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
 
   DateTime? _selectedDateOfBirth;
   bool _isMinor = false;
-  String? _selectedRole; // 'player' or 'scout'
+  String? _selectedRole; // 'player' or 'scout' 'coach'
   String? _parentRelationship; // 'parent' or 'legal_guardian'
   bool _obscurePassword = true;
   bool _obscurePasswordConfirmation = true;
@@ -101,7 +101,8 @@ class _RegistrationPageState extends State<RegistrationPage> {
         _dateOfBirthController.text = DateFormat('yyyy-MM-dd').format(picked);
         
         final age = _calculateAge(picked);
-        _isMinor = age != null && age < 18;
+        // Align with backend: minors are users under 16
+        _isMinor = age != null && age < 16;
       });
     }
   }
@@ -130,17 +131,33 @@ class _RegistrationPageState extends State<RegistrationPage> {
                   (route) => false,
                 );
               } else if (state.user.isScout) {
-                // Scouts go directly to dashboard for now
+                // Scouts go directly to dashboard
                 Navigator.pushNamedAndRemoveUntil(
                   context,
                   AppRoutes.scoutDashboard,
                   (route) => false,
+                  arguments: state.user.id,
                 );
-              } else {
-                // Coaches and other roles go to dashboard (placeholder)
+              } else if (state.user.isCoach) {
+                // Coaches go to coach dashboard
                 Navigator.pushNamedAndRemoveUntil(
                   context,
-                  AppRoutes.scoutDashboard, // Using scout dashboard as placeholder for coach
+                  AppRoutes.coachDashboard,
+                  (route) => false,
+                  arguments: state.user.id,
+                );
+              } else if (state.user.isParent) {
+                // Parents go to parent dashboard
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.parentDashboard,
+                  (route) => false,
+                );
+              } else {
+                // Default fallback
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.playerDashboard,
                   (route) => false,
                 );
               }
@@ -311,8 +328,11 @@ class _RegistrationPageState extends State<RegistrationPage> {
                           ),
                         ),
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return l10n.dateOfBirthRequired;
+                          // Required only for players per backend rules
+                          if (_selectedRole == 'player') {
+                            if (value == null || value.isEmpty) {
+                              return l10n.dateOfBirthRequired;
+                            }
                           }
                           return null;
                         },
@@ -362,81 +382,84 @@ class _RegistrationPageState extends State<RegistrationPage> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Password',
-                          hintText: 'Enter your password',
-                          prefixIcon: const Icon(Icons.lock),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      if (widget.verificationId == null) ...[
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Password',
+                            hintText: 'Enter your password',
+                            prefixIcon: const Icon(Icons.lock),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePassword = !_obscurePassword;
-                              });
-                            },
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Password is required';
-                          }
-                          if (value.length < 8) {
-                            return 'Password must be at least 8 characters';
-                          }
-                          // Check for at least one uppercase letter
-                          if (!value.contains(RegExp(r'[A-Z]'))) {
-                            return 'Password must contain at least one uppercase letter';
-                          }
-                          // Check for at least one lowercase letter
-                          if (!value.contains(RegExp(r'[a-z]'))) {
-                            return 'Password must contain at least one lowercase letter';
-                          }
-                          // Check for at least one number
-                          if (!value.contains(RegExp(r'[0-9]'))) {
-                            return 'Password must contain at least one number';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _passwordConfirmationController,
-                        obscureText: _obscurePasswordConfirmation,
-                        decoration: InputDecoration(
-                          labelText: 'Confirm Password',
-                          hintText: 'Re-enter your password',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePasswordConfirmation ? Icons.visibility_off : Icons.visibility,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            onPressed: () {
-                              setState(() {
-                                _obscurePasswordConfirmation = !_obscurePasswordConfirmation;
-                              });
-                            },
                           ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          validator: (value) {
+                            if (widget.verificationId == null) {
+                              if (value == null || value.isEmpty) {
+                                return 'Password is required';
+                              }
+                              if (value.length < 8) {
+                                return 'Password must be at least 8 characters';
+                              }
+                              if (!value.contains(RegExp(r'[A-Z]'))) {
+                                return 'Password must contain at least one uppercase letter';
+                              }
+                              if (!value.contains(RegExp(r'[a-z]'))) {
+                                return 'Password must contain at least one lowercase letter';
+                              }
+                              if (!value.contains(RegExp(r'[0-9]'))) {
+                                return 'Password must contain at least one number';
+                              }
+                            }
+                            return null;
+                          },
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please confirm your password';
-                          }
-                          if (value != _passwordController.text) {
-                            return 'Passwords do not match';
-                          }
-                          return null;
-                        },
-                      ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordConfirmationController,
+                          obscureText: _obscurePasswordConfirmation,
+                          decoration: InputDecoration(
+                            labelText: 'Confirm Password',
+                            hintText: 'Re-enter your password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePasswordConfirmation ? Icons.visibility_off : Icons.visibility,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePasswordConfirmation = !_obscurePasswordConfirmation;
+                                });
+                              },
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (widget.verificationId == null) {
+                              if (value == null || value.isEmpty) {
+                                return 'Please confirm your password';
+                              }
+                              if (value != _passwordController.text) {
+                                return 'Passwords do not match';
+                              }
+                            }
+                            return null;
+                          },
+                        ),
+                      ],
                       if (_isMinor) ...[
                         const SizedBox(height: 32),
                         Text(
@@ -562,38 +585,72 @@ class _RegistrationPageState extends State<RegistrationPage> {
                                 }
                               }
 
-                              final userData = {
-                                'name': _nameController.text.trim(),
-                                'email': _emailController.text.trim(),
-                                'phone': widget.phoneNumber,
-                                'date_of_birth': _dateOfBirthController.text,
-                                'country': _countryController.text.trim(),
-                                'account_type': _selectedRole!,
-                                'password': _passwordController.text,
-                                'password_confirmation': _passwordConfirmationController.text,
-                              };
+                              final selectedRole = _selectedRole!; // safe due to earlier null check
 
-                              if (_isMinor) {
-                                userData['parent_name'] = _parentNameController.text.trim();
-                                userData['parent_email'] = _parentEmailController.text.trim();
-                                userData['parent_relationship'] = _parentRelationship!;
-                              }
-
-                              // Use Brevo OTP if verificationId is provided, otherwise use Firebase
+                              // Prefer Brevo OTP flow if verificationId available
                               if (widget.verificationId != null) {
+                                // Split full name into first and last name for backend
+                                final fullName = _nameController.text.trim();
+                                final parts = fullName.split(RegExp(r"\s+"));
+                                final firstName = parts.isNotEmpty ? parts.first : fullName;
+                                final lastName = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+
+                                final brevoUserData = <String, dynamic>{
+                                  'first_name': firstName,
+                                  'last_name': lastName,
+                                  'email': _emailController.text.trim(),
+                                  'account_type': selectedRole,
+                                };
+
+                                if (selectedRole == 'player') {
+                                  brevoUserData['date_of_birth'] = _dateOfBirthController.text;
+                                }
+
+                                if (_isMinor) {
+                                  brevoUserData['parent_name'] = _parentNameController.text.trim();
+                                  brevoUserData['parent_email'] = _parentEmailController.text.trim();
+                                  brevoUserData['parent_relationship'] = _parentRelationship!;
+                                }
+
                                 btnContext.read<AuthBloc>().add(
-                                      BrevoRegistrationRequested(
-                                        verificationId: widget.verificationId!,
-                                        userData: userData,
-                                      ),
-                                    );
+                                  BrevoRegistrationRequested(
+                                    verificationId: widget.verificationId!,
+                                    userData: brevoUserData,
+                                  ),
+                                );
+                              } else if (widget.firebaseUid != null) {
+                                // Legacy/Firebase path continues to use name and password
+                                final firebaseUserData = {
+                                  'name': _nameController.text.trim(),
+                                  'email': _emailController.text.trim(),
+                                  'phone': widget.phoneNumber,
+                                  'date_of_birth': _dateOfBirthController.text,
+                                  'country': _countryController.text.trim(),
+                                  'account_type': selectedRole,
+                                  'password': _passwordController.text,
+                                  'password_confirmation': _passwordConfirmationController.text,
+                                };
+
+                                if (_isMinor) {
+                                  firebaseUserData['parent_name'] = _parentNameController.text.trim();
+                                  firebaseUserData['parent_email'] = _parentEmailController.text.trim();
+                                  firebaseUserData['parent_relationship'] = _parentRelationship!;
+                                }
+
+                                btnContext.read<AuthBloc>().add(
+                                  RegistrationRequested(
+                                    firebaseUid: widget.firebaseUid!,
+                                    userData: firebaseUserData,
+                                  ),
+                                );
                               } else {
-                                btnContext.read<AuthBloc>().add(
-                                      RegistrationRequested(
-                                        firebaseUid: widget.firebaseUid!,
-                                        userData: userData,
-                                      ),
-                                    );
+                                // Neither flow available - show error and abort
+                                ScaffoldMessenger.of(btnContext).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Missing registration context. Please restart authentication.'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
                               }
                             }
                           },

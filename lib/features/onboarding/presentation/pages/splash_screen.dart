@@ -84,8 +84,19 @@ class _SplashScreenState extends State<SplashScreen>
           if (state.user.isPlayer) {
             Navigator.of(context).pushReplacementNamed(AppRoutes.playerDashboard);
           } else if (state.user.isScout) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.scoutDashboard);
+            Navigator.of(context).pushReplacementNamed(
+              AppRoutes.scoutDashboard,
+              arguments: state.user.id,
+            );
+          } else if (state.user.isCoach) {
+            Navigator.of(context).pushReplacementNamed(
+              AppRoutes.coachDashboard,
+              arguments: state.user.id,
+            );
+          } else if (state.user.isParent) {
+            Navigator.of(context).pushReplacementNamed(AppRoutes.parentDashboard);
           } else {
+            // Default fallback
             Navigator.of(context).pushReplacementNamed(AppRoutes.playerDashboard);
           }
         } else if (state is AuthUnauthenticated) {

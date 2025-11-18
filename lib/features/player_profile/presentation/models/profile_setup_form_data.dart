@@ -55,36 +55,101 @@ class ProfileSetupFormData {
     this.isMinor = false,
   });
 
-  /// Convert to Map for API submission
+  /// Convert to Map for API submission to /api/v1/player/profile
+  /// Note: date_of_birth is NOT sent here - it's already stored in users table from registration
   Map<String, dynamic> toJson() {
+    // Split full name into first and last name
+    final nameParts = fullName.trim().split(' ');
+    final firstName = nameParts.isNotEmpty ? nameParts.first : '';
+    // Ensure last_name is never empty - backend requires it
+    final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : 'Player';
+
     final data = <String, dynamic>{
-      'full_name': fullName,
-      'date_of_birth': dateOfBirth?.toIso8601String(),
-      'nationality': nationality,
-      'height': height,
-      'weight': weight,
-      'dominant_foot': dominantFoot,
+      'first_name': firstName,
+      'last_name': lastName,
+      // DOB is NOT required for profile creation - it's read from user.date_of_birth
+      'nationality': _convertCountryToIsoCode(nationality),
+      'height_cm': height?.toInt(),
+      'weight_kg': weight?.toInt(),
+      'preferred_foot': dominantFoot,
       'current_club': currentClub,
-      'positions': positions,
+      'primary_position': _convertPositionToBackendFormat(positions.isNotEmpty ? positions.first : null),
+      'secondary_positions': positions.length > 1 
+          ? positions.sublist(1).map((p) => _convertPositionToBackendFormat(p)).toList()
+          : null,
       'jersey_number': jerseyNumber,
-      'years_playing': yearsPlaying,
-      'email': email,
-      'phone_number': phoneNumber,
-      'instagram_handle': instagramHandle,
-      'twitter_handle': twitterHandle,
-      'is_minor': isMinor,
+      'career_start_date': yearsPlaying != null 
+          ? DateTime(DateTime.now().year - yearsPlaying!).toIso8601String()
+          : null,
+      'contact_email': email,
+      'contact_phone': phoneNumber,
+      'social_links': {
+        if (instagramHandle != null && instagramHandle!.isNotEmpty)
+          'instagram': instagramHandle,
+        if (twitterHandle != null && twitterHandle!.isNotEmpty)
+          'twitter': twitterHandle,
+      },
     };
 
-    // Add parent info if minor
-    if (isMinor) {
-      data['parent_name'] = parentName;
-      data['parent_email'] = parentEmail;
-      data['parent_phone'] = parentPhone;
-      data['emergency_contact'] = emergencyContact;
-      data['parental_consent_given'] = false; // Will need consent process
-    }
+    // Parent info is NOT needed for profile creation - consent was handled at registration
+    // Profile will inherit minor status from user.age and apply safeguards automatically
 
     return data;
+  }
+
+  /// Convert country name to ISO 3166-1 alpha-3 code
+  String? _convertCountryToIsoCode(String? countryName) {
+    if (countryName == null) return null;
+    
+    // Common country mappings (expand as needed)
+    final countryMap = {
+      'Oman': 'OMN',
+      'United Arab Emirates': 'ARE',
+      'Saudi Arabia': 'SAU',
+      'Qatar': 'QAT',
+      'Kuwait': 'KWT',
+      'Bahrain': 'BHR',
+      'Egypt': 'EGY',
+      'Jordan': 'JOR',
+      'Lebanon': 'LBN',
+      'Iraq': 'IRQ',
+      'Syria': 'SYR',
+      'Palestine': 'PSE',
+      'Yemen': 'YEM',
+      'Morocco': 'MAR',
+      'Algeria': 'DZA',
+      'Tunisia': 'TUN',
+      'Libya': 'LBY',
+      'Sudan': 'SDN',
+      'Somalia': 'SOM',
+      'Djibouti': 'DJI',
+      'Comoros': 'COM',
+      'Mauritania': 'MRT',
+    };
+    
+    return countryMap[countryName];
+  }
+
+  /// Convert position abbreviation to backend format
+  String? _convertPositionToBackendFormat(String? position) {
+    if (position == null) return null;
+    
+    // Position mappings from Flutter abbreviations to backend format
+    final positionMap = {
+      'GK': 'goalkeeper',
+      'CB': 'center_back',
+      'RB': 'right_back',
+      'LB': 'left_back',
+      'CDM': 'defensive_midfielder',
+      'CM': 'central_midfielder',
+      'CAM': 'attacking_midfielder',
+      'RW': 'right_winger',
+      'LW': 'left_winger',
+      'ST': 'striker',
+      'CF': 'second_striker',
+    };
+    
+    return positionMap[position];
   }
 
   /// Calculate age from date of birth

@@ -46,6 +46,30 @@ import '../../features/player_profile/domain/usecases/create_player_stat.dart';
 import '../../features/player_profile/domain/usecases/update_player_stat.dart';
 import '../../features/player_profile/domain/usecases/delete_player_stat.dart';
 import '../../features/player_profile/presentation/bloc/player_profile_bloc.dart';
+import '../../features/scout_profile/data/datasources/scout_remote_data_source.dart';
+import '../../features/scout_profile/data/repositories/scout_repository_impl.dart';
+import '../../features/scout_profile/domain/repositories/scout_repository.dart';
+import '../../features/scout_profile/domain/usecases/get_scout_profile.dart';
+import '../../features/scout_profile/domain/usecases/create_scout_profile.dart';
+import '../../features/scout_profile/domain/usecases/update_scout_profile.dart';
+import '../../features/scout_profile/domain/usecases/search_players.dart';
+import '../../features/scout_profile/domain/usecases/get_saved_searches.dart';
+import '../../features/scout_profile/domain/usecases/save_search.dart';
+import '../../features/scout_profile/domain/usecases/delete_saved_search.dart';
+import '../../features/scout_profile/domain/usecases/execute_saved_search.dart';
+import '../../features/scout_profile/presentation/bloc/scout_profile_bloc.dart';
+import '../../features/scout_profile/presentation/bloc/saved_searches_bloc.dart';
+import '../../features/scout_profile/presentation/bloc/player_search_bloc.dart';
+import '../../features/coach_profile/data/datasources/coach_remote_data_source.dart';
+import '../../features/coach_profile/data/repositories/coach_repository_impl.dart';
+import '../../features/coach_profile/domain/repositories/coach_repository.dart';
+import '../../features/coach_profile/domain/usecases/get_coach_profile.dart';
+import '../../features/coach_profile/domain/usecases/create_coach_profile.dart';
+import '../../features/coach_profile/domain/usecases/update_coach_profile.dart';
+import '../../features/coach_profile/domain/usecases/get_coach_teams.dart';
+import '../../features/coach_profile/domain/usecases/create_team.dart';
+import '../../features/coach_profile/domain/usecases/manage_team_players.dart';
+import '../../features/coach_profile/presentation/bloc/coach_profile_bloc.dart';
 
 final getIt = GetIt.instance;
 
@@ -212,6 +236,86 @@ Future<void> configureDependencies() async {
       getIt<CreatePlayerStat>(),
       getIt<UpdatePlayerStat>(),
       getIt<DeletePlayerStat>(),
+    ),
+  );
+
+  // ========== Scout Profile Module ==========
+  
+  // Register Scout Profile Data Source
+  getIt.registerLazySingleton<ScoutRemoteDataSource>(
+    () => ScoutRemoteDataSourceImpl(getIt<ApiClient>().dio),
+  );
+
+  // Register Scout Profile Repository
+  getIt.registerLazySingleton<ScoutRepository>(
+    () => ScoutRepositoryImpl(getIt<ScoutRemoteDataSource>()),
+  );
+
+  // Register Scout Profile Use Cases
+  getIt.registerLazySingleton(() => GetScoutProfile(getIt<ScoutRepository>()));
+  getIt.registerLazySingleton(() => CreateScoutProfile(getIt<ScoutRepository>()));
+  getIt.registerLazySingleton(() => UpdateScoutProfile(getIt<ScoutRepository>()));
+  getIt.registerLazySingleton(() => SearchPlayers(getIt<ScoutRepository>()));
+  getIt.registerLazySingleton(() => GetSavedSearches(getIt<ScoutRepository>()));
+  getIt.registerLazySingleton(() => SaveSearch(getIt<ScoutRepository>()));
+  getIt.registerLazySingleton(() => DeleteSavedSearch(getIt<ScoutRepository>()));
+  getIt.registerLazySingleton(() => ExecuteSavedSearch(getIt<ScoutRepository>()));
+
+  // Register Scout Profile BLoCs
+  getIt.registerFactory(
+    () => ScoutProfileBloc(
+      getIt<GetScoutProfile>(),
+      getIt<CreateScoutProfile>(),
+      getIt<UpdateScoutProfile>(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => SavedSearchesBloc(
+      getIt<GetSavedSearches>(),
+      getIt<SaveSearch>(),
+      getIt<DeleteSavedSearch>(),
+      getIt<ExecuteSavedSearch>(),
+    ),
+  );
+
+  getIt.registerFactory(
+    () => PlayerSearchBloc(
+      getIt<SearchPlayers>(),
+    ),
+  );
+
+  // ========== Coach Profile Module ==========
+  
+  // Register Coach Profile Data Source
+  getIt.registerLazySingleton<CoachRemoteDataSource>(
+    () => CoachRemoteDataSource(getIt<ApiClient>().dio),
+  );
+
+  // Register Coach Profile Repository
+  getIt.registerLazySingleton<CoachRepository>(
+    () => CoachRepositoryImpl(getIt<CoachRemoteDataSource>()),
+  );
+
+  // Register Coach Profile Use Cases
+  getIt.registerLazySingleton(() => GetCoachProfile(getIt<CoachRepository>()));
+  getIt.registerLazySingleton(() => CreateCoachProfile(getIt<CoachRepository>()));
+  getIt.registerLazySingleton(() => UpdateCoachProfile(getIt<CoachRepository>()));
+  getIt.registerLazySingleton(() => GetCoachTeams(getIt<CoachRepository>()));
+  getIt.registerLazySingleton(() => CreateTeam(getIt<CoachRepository>()));
+  getIt.registerLazySingleton(() => AddPlayerToTeam(getIt<CoachRepository>()));
+  getIt.registerLazySingleton(() => RemovePlayerFromTeam(getIt<CoachRepository>()));
+
+  // Register Coach Profile BLoC
+  getIt.registerFactory(
+    () => CoachProfileBloc(
+      getIt<GetCoachProfile>(),
+      getIt<CreateCoachProfile>(),
+      getIt<UpdateCoachProfile>(),
+      getIt<GetCoachTeams>(),
+      getIt<CreateTeam>(),
+      getIt<AddPlayerToTeam>(),
+      getIt<RemovePlayerFromTeam>(),
     ),
   );
 }

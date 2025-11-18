@@ -50,11 +50,26 @@ class _LoginPageState extends State<LoginPage> {
                   context,
                   AppRoutes.scoutDashboard,
                   (route) => false,
+                  arguments: state.user.id,
                 );
-              } else {
+              } else if (state.user.isCoach) {
                 Navigator.pushNamedAndRemoveUntil(
                   context,
-                  AppRoutes.scoutDashboard,
+                  AppRoutes.coachDashboard,
+                  (route) => false,
+                  arguments: state.user.id,
+                );
+              } else if (state.user.isParent) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.parentDashboard,
+                  (route) => false,
+                );
+              } else {
+                // Default fallback
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.playerDashboard,
                   (route) => false,
                 );
               }

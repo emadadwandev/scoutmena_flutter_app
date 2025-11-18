@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
-import '../../../../core/di/injection.dart';
 import '../../../../core/navigation/routes.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../l10n/app_localizations_temp.dart';
@@ -131,18 +130,20 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return BlocProvider(
-      create: (_) => getIt<AuthBloc>(),
-      child: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-        ),
-        body: BlocConsumer<AuthBloc, AuthState>(
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
+            print('🔔 OTP Page - State changed: ${state.runtimeType}');
+            
             if (state is BrevoOtpVerified) {
+              print('✅ OTP Verified! Mode: ${widget.mode}');
               // OTP verified successfully - now handle login/registration
               if (widget.mode == 'register') {
+                print('📝 Navigating to registration...');
                 // User is registering - go to registration form
                 Navigator.pushReplacementNamed(
                   context,
@@ -153,27 +154,30 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   },
                 );
               } else {
-                // User is logging in - attempt login
-                // This will be handled by the next event (BrevoLoginRequested)
-                // For now, show success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('OTP verified successfully'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                print('🔐 Attempting login with verification: ${widget.verificationId}');
+                // User is logging in - attempt login with verified OTP
+                // Trigger login event with player as default account type
+                // TODO: Let user select account type in the UI
+                context.read<AuthBloc>().add(
+                      BrevoLoginRequested(
+                        verificationId: widget.verificationId,
+                        accountType: 'player', // Default to player
+                      ),
+                    );
               }
             } else if (state is AuthRegistrationRequired) {
+              print('📋 Registration required - navigating...');
               // New user needs to register - go directly to registration form
               Navigator.pushReplacementNamed(
                 context,
                 AppRoutes.registration,
                 arguments: {
-                  'firebaseUid': state.firebaseUid,
+                  'verificationId': widget.verificationId, // Use verification ID for Brevo OTP
                   'phoneNumber': widget.phoneNumber,
                 },
               );
             } else if (state is AuthAuthenticated) {
+              print('🎉 User authenticated! isPlayer: ${state.user.isPlayer}, isScout: ${state.user.isScout}');
               // User already exists, logged in successfully
               if (widget.mode == 'register') {
                 // If they were trying to register but account exists, show message
@@ -184,13 +188,32 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
                   ),
                 );
               }
-              // Navigate to dashboard
+              // Navigate to dashboard based on account type
               if (state.user.isPlayer) {
+                print('🏃 Navigating to player dashboard...');
                 Navigator.pushReplacementNamed(context, AppRoutes.playerDashboard);
               } else if (state.user.isScout) {
-                Navigator.pushReplacementNamed(context, AppRoutes.scoutDashboard);
+                print('🔍 Navigating to scout dashboard...');
+                Navigator.pushReplacementNamed(
+                  context, 
+                  AppRoutes.scoutDashboard,
+                  arguments: state.user.id,
+                );
+              } else if (state.user.isCoach) {
+                print('👨‍🏫 Navigating to coach dashboard...');
+                Navigator.pushReplacementNamed(
+                  context, 
+                  AppRoutes.coachDashboard,
+                  arguments: state.user.id,
+                );
+              } else if (state.user.isParent) {
+                print('👨‍👩‍👧 Navigating to parent dashboard...');
+                Navigator.pushReplacementNamed(context, AppRoutes.parentDashboard);
+              } else {
+                print('⚠️ Unknown user role: ${state.user.accountType}');
               }
             } else if (state is AuthError) {
+              print('❌ Auth error: ${state.message}');
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
@@ -303,7 +326,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             );
           },
         ),
-      ),
-    );
+      );
   }
 }
+

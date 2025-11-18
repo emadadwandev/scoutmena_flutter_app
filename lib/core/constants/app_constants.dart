@@ -5,7 +5,7 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // API
-  static const String baseUrl = 'http://192.168.1.9:8000/api/v1';
+  static const String baseUrl = 'http://192.168.1.6:8000/api/v1';
   static const int apiTimeoutSeconds = 30;
 
   // Storage Keys

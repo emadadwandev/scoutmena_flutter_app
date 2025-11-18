@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import '../error/failures.dart';
+import '../error/exceptions.dart';
 import '../network/api_client.dart';
 import '../constants/app_constants.dart';
 
@@ -202,9 +203,22 @@ class BrevoOtpService {
           message: response.data['message'] ?? 'Login failed',
         ));
       }
-    } on DioException catch (e) {
-      return Left(_handleDioError(e));
+    } on ServerException catch (e) {
+      print('🔍 ServerException caught in loginWithOtp: ${e.statusCode}');
+      // For 404, check if it's a user not found error
+      if (e.statusCode == 404 && e.message.contains('account found')) {
+        print('🔍 Creating UserNotFoundFailure with requiresRegistration: true');
+        return Left(UserNotFoundFailure(
+          message: e.message,
+          requiresRegistration: true,
+        ));
+      }
+      return Left(ServerFailure(message: e.message));
+    } on AppException catch (e) {
+      print('🔍 AppException caught: ${e.runtimeType}');
+      return Left(ServerFailure(message: e.message));
     } catch (e) {
+      print('⚠️ Unexpected error in loginWithOtp: $e');
       return Left(ServerFailure(message: 'An unexpected error occurred: $e'));
     }
   }
@@ -228,7 +242,19 @@ class BrevoOtpService {
         case 403:
           return AuthenticationFailure(message: message);
         case 404:
-          return UserNotFoundFailure(message: message);
+          // Check if this is a user not found error with registration requirement
+          final errorCode = data is Map ? data['error_code'] : null;
+          final requiresRegistration = data is Map && data['data'] is Map
+              ? data['data']['requires_registration'] ?? true
+              : true;
+          
+          if (errorCode == 'USER_NOT_FOUND') {
+            return UserNotFoundFailure(
+              message: message,
+              requiresRegistration: requiresRegistration,
+            );
+          }
+          return ServerFailure(message: message);
         case 422:
           return ValidationFailure(
             message: message,
@@ -251,19 +277,6 @@ class BrevoOtpService {
       return ServerFailure(message: 'An unexpected error occurred');
     }
   }
-}
-
-/// Custom failure for user not found (requires registration)
-class UserNotFoundFailure extends Failure {
-  final bool requiresRegistration;
-
-  UserNotFoundFailure({
-    required String message,
-    this.requiresRegistration = true,
-  }) : super(message: message);
-
-  @override
-  List<Object?> get props => [message, requiresRegistration];
 }
 
 /// Rate limit failure

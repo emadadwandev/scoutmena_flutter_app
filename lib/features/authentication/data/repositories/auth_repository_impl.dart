@@ -231,9 +231,15 @@ class AuthRepositoryImpl implements AuthRepository {
 
           // Extract user from response
           final userMap = data['user'] as Map<String, dynamic>;
+          final token = data['token'] as String?;
 
           // Create user model from response
           final userModel = UserModel.fromJson(userMap);
+
+          // Save auth token to secure storage when provided (adult registration)
+          if (token != null && token.isNotEmpty) {
+            await localDataSource.saveAuthToken(token);
+          }
 
           // Cache user locally
           await localDataSource.cacheUser(userModel);
@@ -264,13 +270,25 @@ class AuthRepositoryImpl implements AuthRepository {
       );
 
       return result.fold(
-        (failure) => Left(failure),
+        (failure) {
+          print('🔍 Repository received failure: ${failure.runtimeType}');
+          if (failure is UserNotFoundFailure) {
+            print('🔍 Repository: It\'s a UserNotFoundFailure with requiresRegistration: ${failure.requiresRegistration}');
+          }
+          return Left(failure);
+        },
         (data) async {
-          // Extract user from response
+          // Extract user and token from response
           final userMap = data['user'] as Map<String, dynamic>;
+          final token = data['token'] as String?;
 
           // Create user model from response
           final userModel = UserModel.fromJson(userMap);
+
+          // Save auth token to secure storage
+          if (token != null && token.isNotEmpty) {
+            await localDataSource.saveAuthToken(token);
+          }
 
           // Cache user locally
           await localDataSource.cacheUser(userModel);

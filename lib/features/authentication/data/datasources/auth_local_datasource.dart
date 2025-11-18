@@ -9,6 +9,8 @@ abstract class AuthLocalDataSource {
   Future<void> clearCache();
   Future<String?> getFirebaseToken();
   Future<void> saveFirebaseToken(String token);
+  Future<void> saveAuthToken(String token);
+  Future<String?> getAuthToken();
 }
 
 class AuthLocalDataSourceImpl implements AuthLocalDataSource {
@@ -18,6 +20,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
 
   static const String _userKey = 'user_data';
   static const String _tokenKey = 'firebase_token';
+  static const String _authTokenKey = 'auth_token';
 
   @override
   Future<UserModel?> getCachedUser() async {
@@ -47,6 +50,7 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
     try {
       await secureStorage.delete(key: _userKey);
       await secureStorage.delete(key: _tokenKey);
+      await secureStorage.delete(key: _authTokenKey);
     } catch (e) {
       throw CacheException(message: 'Failed to clear cache');
     }
@@ -67,6 +71,24 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
       await secureStorage.write(key: _tokenKey, value: token);
     } catch (e) {
       throw CacheException(message: 'Failed to save Firebase token');
+    }
+  }
+
+  @override
+  Future<void> saveAuthToken(String token) async {
+    try {
+      await secureStorage.write(key: _authTokenKey, value: token);
+    } catch (e) {
+      throw CacheException(message: 'Failed to save auth token');
+    }
+  }
+
+  @override
+  Future<String?> getAuthToken() async {
+    try {
+      return await secureStorage.read(key: _authTokenKey);
+    } catch (e) {
+      throw CacheException(message: 'Failed to get auth token');
     }
   }
 }

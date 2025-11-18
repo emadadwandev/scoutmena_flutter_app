@@ -35,6 +35,7 @@ class UserEntity extends Equatable {
 
   bool get isPlayer => accountType == 'player';
   bool get isScout => accountType == 'scout';
+  bool get isCoach => accountType == 'coach';
   bool get isParent => accountType == 'parent';
 
   int? get age {

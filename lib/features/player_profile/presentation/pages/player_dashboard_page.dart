@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/navigation/routes.dart';
+import '../../../authentication/presentation/bloc/auth_bloc.dart';
+import '../../../authentication/presentation/bloc/auth_state.dart';
+import '../bloc/player_profile_bloc.dart';
+import '../bloc/player_profile_event.dart';
 
 /// Player Dashboard - Main home screen for players
 /// Shows overview of profile, stats, recent media, and quick actions
@@ -15,23 +20,29 @@ class _PlayerDashboardPageState extends State<PlayerDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    // TODO: Get actual user ID from AuthBloc
-    // For now, we'll show a simplified dashboard without requiring profile data
-    // Once user management is integrated, replace 'demo' with actual user ID
-    
-    return Scaffold(
-      body: _buildBody(),
-      bottomNavigationBar: _buildBottomNavBar(),
-      floatingActionButton: _selectedIndex == 0 ? _buildFAB() : null,
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        // Extract user ID from authenticated state
+        String? userId;
+        if (authState is AuthAuthenticated) {
+          userId = authState.user.id;
+        }
+
+        return Scaffold(
+          body: _buildBody(userId),
+          bottomNavigationBar: _buildBottomNavBar(),
+          floatingActionButton: _selectedIndex == 0 ? _buildFAB() : null,
+        );
+      },
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody(String? userId) {
     switch (_selectedIndex) {
       case 0:
-        return _buildHomeTab();
+        return _buildHomeTab(userId);
       case 1:
-        return _buildProfileTab();
+        return _buildProfileTab(userId);
       case 2:
         return _buildStatsTab();
       case 3:
@@ -39,15 +50,21 @@ class _PlayerDashboardPageState extends State<PlayerDashboardPage> {
       case 4:
         return _buildSettingsTab();
       default:
-        return _buildHomeTab();
+        return _buildHomeTab(userId);
     }
   }
 
-  Widget _buildHomeTab() {
+  Widget _buildHomeTab(String? userId) {
     return RefreshIndicator(
       onRefresh: () async {
-        // TODO: Reload profile data when authentication is integrated
-        await Future.delayed(const Duration(seconds: 1));
+        // Reload profile data if user is authenticated
+        if (userId != null) {
+          context.read<PlayerProfileBloc>().add(
+            LoadPlayerProfile(playerId: userId),
+          );
+          // Wait for the profile to load
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
       },
       child: CustomScrollView(
         slivers: [
@@ -345,14 +362,13 @@ class _PlayerDashboardPageState extends State<PlayerDashboardPage> {
     );
   }
 
-  Widget _buildProfileTab() {
-    // TODO: Get actual user ID from AuthBloc
-    // For now using 'current' which should be replaced with actual logged-in user ID
+  Widget _buildProfileTab(String? userId) {
+    // Navigate to player profile using authenticated user ID
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Navigator.pushNamed(
         context,
         AppRoutes.playerProfile,
-        arguments: 'current', // This will be replaced with actual user ID from auth
+        arguments: userId ?? 'current', // Fallback to 'current' if userId is null
       );
       // Reset to home tab after navigation
       setState(() => _selectedIndex = 0);
